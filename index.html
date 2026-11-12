@@ -179,13 +179,13 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- SCREEN 3: LAYAR UJIAN AKTIF (70% KIRI SOAL, 30% KANAN NAVIGASI/PETA)-->
+    <!-- SCREEN 3: LAYAR UJIAN AKTIF (RESPONSIF MOBILE & PC)                 -->
     <!-- =================================================================== -->
-    <div id="screen-ujian" class="hidden-screen flex-1 overflow-hidden p-3 sm:p-4">
-        <div class="flex flex-col md:flex-row h-full gap-4 w-full">
+    <div id="screen-ujian" class="hidden-screen flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4">
+        <div class="flex flex-col lg:flex-row h-full gap-4 w-full min-h-max">
 
-            <!-- KOLOM KIRI (70%): AREA SOAL (PDF ATAU NATIVE CBT INTERAKTIF) -->
-            <div class="w-full md:w-[70%] bg-white rounded-xl shadow-sm p-3 sm:p-4 flex flex-col h-full border border-gray-200 overflow-hidden">
+            <!-- KOLOM KIRI (70% PC, 100% MOBILE): AREA SOAL -->
+            <div class="w-full lg:w-[70%] bg-white rounded-xl shadow-sm p-3 sm:p-4 flex flex-col flex-1 border border-gray-200">
                 <!-- Header Soal -->
                 <div class="flex justify-between items-center mb-2 bg-blue-900 text-white px-3.5 py-2 rounded-lg flex-shrink-0">
                     <div id="pdf-page-controls" class="flex items-center space-x-1.5">
@@ -198,31 +198,32 @@
                 </div>
 
                 <!-- WADAH 1: KANVAS MODE PDF -->
-                <div id="pdf-canvas-container" class="bg-gray-100 flex-1 rounded-lg mb-3 overflow-auto flex items-center justify-center p-2 relative">
-                    <canvas id="pdf-canvas" class="border border-gray-300 shadow-sm rounded bg-white"></canvas>
+                <div id="pdf-canvas-container" class="bg-gray-100 flex-1 rounded-lg mb-3 overflow-auto flex items-center justify-center p-2 relative min-h-[300px]">
+                    <canvas id="pdf-canvas" class="border border-gray-300 shadow-sm rounded bg-white max-w-full"></canvas>
                 </div>
 
-                <!-- WADAH 2: LEMBAR INTERAKTIF MODE NATIVE CBT (MENJAWAB LANGSUNG DI SOAL) -->
-                <div id="native-cbt-container" class="hidden flex-1 overflow-y-auto pr-1 mb-3 space-y-3 cbt-scale-content"></div>
+                <!-- WADAH 2: LEMBAR INTERAKTIF MODE NATIVE CBT -->
+                <!-- PERBAIKAN: Hapus overflow-y-auto agar bisa digulir bersama halaman utama di HP -->
+                <div id="native-cbt-container" class="hidden w-full mb-3 space-y-3 cbt-scale-content"></div>
 
                 <!-- Tombol Navigasi Bawah -->
-                <div class="flex justify-between items-center flex-shrink-0 mt-auto pt-2 border-t">
-                    <button type="button" id="btn-prev" class="bg-gray-200 text-gray-800 px-4 sm:px-6 py-2.5 rounded-lg font-bold hover:bg-gray-300 text-sm">&laquo; Sebelumnya</button>
-                    <button type="button" onclick="bukaModalPetaMobile()" class="md:hidden bg-gray-700 text-white px-3.5 py-2.5 rounded-lg font-bold text-xs">Peta Soal</button>
-                    <button type="button" id="btn-next" class="bg-blue-600 text-white px-5 sm:px-6 py-2.5 rounded-lg font-bold shadow hover:bg-blue-700 text-sm">Selanjutnya &raquo;</button>
+                <div class="flex justify-between items-center flex-shrink-0 mt-4 pt-3 border-t">
+                    <button type="button" id="btn-prev" class="bg-gray-200 text-gray-800 px-3 sm:px-6 py-2.5 rounded-lg font-bold hover:bg-gray-300 text-sm">&laquo; <span class="hidden sm:inline">Sebelumnya</span></button>
+                    <button type="button" onclick="bukaModalPetaMobile()" class="lg:hidden bg-gray-700 text-white px-3.5 py-2.5 rounded-lg font-bold text-xs">Peta Soal</button>
+                    <button type="button" id="btn-next" class="bg-blue-600 text-white px-4 sm:px-6 py-2.5 rounded-lg font-bold shadow hover:bg-blue-700 text-sm"><span class="hidden sm:inline">Selanjutnya</span> &raquo;</button>
                 </div>
             </div>
 
-            <!-- KOLOM KANAN (30%): AREA JAWABAN (MODE PDF) & PETA SOAL -->
-            <div class="w-full md:w-[30%] flex flex-col gap-3 h-full overflow-hidden">
-                <!-- Panel Input Jawaban Khusus Mode PDF (Pada Mode Native CBT, siswa menjawab langsung di lembar soal kiri) -->
-                <div id="right-answer-card" class="bg-white rounded-xl shadow-sm p-4 flex flex-col justify-center border-t-4 border-blue-600 flex-shrink-0">
+            <!-- KOLOM KANAN (30% PC, 100% MOBILE): AREA JAWABAN (PDF) & PETA SOAL -->
+            <div class="w-full lg:w-[30%] flex flex-col gap-3 flex-shrink-0">
+                <!-- Panel Input Jawaban Khusus Mode PDF -->
+                <div id="right-answer-card" class="bg-white rounded-xl shadow-sm p-4 flex flex-col justify-center border-t-4 border-blue-600">
                     <h3 id="lbl-input-jawaban" class="font-bold text-gray-800 text-center mb-3 text-sm uppercase tracking-wider">Input Jawaban</h3>
                     <div id="answer-area" class="w-full"></div>
                 </div>
 
-                <!-- Panel Peta Soal -->
-                <div class="hidden md:flex bg-white rounded-xl shadow-sm p-4 flex-1 flex-col overflow-hidden border-t-4 border-emerald-500">
+                <!-- Panel Peta Soal (Disembunyikan di HP, digantikan Modal Peta) -->
+                <div class="hidden lg:flex bg-white rounded-xl shadow-sm p-4 flex-col border-t-4 border-emerald-500 max-h-[400px]">
                     <div class="flex justify-between items-center mb-3 border-b pb-2">
                         <h3 id="lbl-peta-soal" class="font-bold text-gray-800 text-sm">Peta Nomor Soal</h3>
                         <span id="stat-terjawab" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">0/0 Terjawab</span>
@@ -233,7 +234,7 @@
 
         </div>
     </div>
-
+    
     <!-- =================================================================== -->
     <!-- SCREEN 4: UJIAN SELESAI & BUKTI NILAI EXAM-CBT                      -->
     <!-- =================================================================== -->
@@ -624,13 +625,17 @@
                     valEl.innerText = isEn ? "Exam time has arrived!" : "Waktu ujian telah tiba!";
                     valEl.className = "text-sm font-black text-green-600";
                 } else {
-                    const h = Math.floor(diffSec / 3600);
+                    const d = Math.floor(diffSec / (24 * 3600));
+                    const h = Math.floor((diffSec % (24 * 3600)) / 3600);
                     const m = Math.floor((diffSec % 3600) / 60);
-                    const s = diffSec % 60;
-                    valEl.innerText = h > 0
-                        ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
-                        : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-                    valEl.className = "text-2xl font-black text-amber-600";
+                    
+                    let timeStr = "";
+                    if (d > 0) timeStr += `${d} ${isEn ? 'Day' : 'Hari'} `;
+                    if (h > 0 || d > 0) timeStr += `${h} ${isEn ? 'Hr' : 'Jam'} `;
+                    timeStr += `${m} ${isEn ? 'Min' : 'Mnt'}`;
+                    
+                    valEl.innerText = timeStr;
+                    valEl.className = "text-xl sm:text-2xl font-black text-amber-600";
                 }
             };
             updateCd();
