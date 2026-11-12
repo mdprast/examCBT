@@ -79,7 +79,7 @@
                 CBT
             </div>
             <h1 id="title-app" class="text-2xl sm:text-3xl font-black text-blue-700 text-center">APLIKASI EXAM-CBT</h1>
-            <p class="text-xs font-bold text-blue-500 mt-1 mb-6">Web Edition v2.0 (PDF & Native CBT)</p>
+            <p class="text-xs font-bold text-blue-500 mt-1 mb-6">Web Edition v2.1 (PDF & Native CBT)</p>
 
             <!-- Tab Menu: Sinkron Cloud vs File Manual -->
             <div class="grid grid-cols-2 w-full bg-gray-200 p-1 rounded-xl mb-4">
@@ -203,7 +203,6 @@
                 </div>
 
                 <!-- WADAH 2: LEMBAR INTERAKTIF MODE NATIVE CBT -->
-                <!-- PERBAIKAN: Hapus overflow-y-auto agar bisa digulir bersama halaman utama di HP -->
                 <div id="native-cbt-container" class="hidden w-full mb-3 space-y-3 cbt-scale-content"></div>
 
                 <!-- Tombol Navigasi Bawah -->
@@ -333,10 +332,11 @@
         let brightnessLevel = 1.0;
         let cbtTextScale = 1.0;
         let isWacanaCollapsed = false;
+        let activeJodohPdfNum = null; // State tombol angka aktif untuk soal Menjodohkan pada Mode PDF
 
         let appData = {
             mapel: '', id_guru: '', waktu: 90, tanggal: '', nama_ujian: 'Ujian CBT',
-            tampilkan_skor: true, mode_ujian: 'PDF', secure_data: ''
+            tampilkan_skor: true, mode_ujian: 'PDF', skor_parsial: false, secure_data: ''
         };
         let isModeCbt = false;
         let cbtMediaBlobUrls = {}; // { 'soal_1.webp': 'blob:...' }
@@ -512,7 +512,7 @@
 
             if (!token) return alert(isEn ? "Sync Code (Token) is REQUIRED!" : "Kode Sinkronisasi (Token) WAJIB diisi!");
             if (selectedUnduhTab === 1 && !fileInput.files.length && !gdriveInput) {
-                return alert(isEn ? "Select a local .enc file or paste a Google Drive link!" : "Pilih file .enc lokal atau tempelkan link Google Drive!");
+                return alert(isEn ? "Select a local .enc file or paste a link!" : "Pilih file .enc lokal atau tempelkan link soal!");
             }
 
             const boxProg = document.getElementById('box-progress-unduh');
@@ -526,7 +526,6 @@
                 let rawArrayBuffer = null;
 
                 if (selectedUnduhTab === 0) {
-                    // Tarik link_soal otomatis dari Supabase berdasarkan Token
                     barFill.style.width = '40%';
                     const resSupa = await fetch(`${SUPABASE_URL}/rest/v1/daftar_ujian?select=link_soal&token=eq.${encodeURIComponent(token)}`, {
                         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
@@ -535,7 +534,7 @@
                     const arrSupa = await resSupa.json();
                     if (!arrSupa.length) throw new Error(isEn ? "Sync Code (Token) not found!" : "Kode Sinkronisasi (Token) tidak ditemukan di server!");
                     const linkDrive = arrSupa[0].link_soal;
-                    if (!linkDrive) throw new Error(isEn ? "Teacher has not uploaded the Google Drive link for this token." : "Guru belum menautkan link Google Drive untuk Kode Token ini.");
+                    if (!linkDrive) throw new Error(isEn ? "Teacher has not uploaded the exam link for this token." : "Guru belum menautkan link soal untuk Kode Token ini.");
 
                     barFill.style.width = '70%';
                     rawArrayBuffer = await downloadBufferFromGDrive(linkDrive);
@@ -552,12 +551,10 @@
                 const uint8 = new Uint8Array(rawArrayBuffer);
                 let encryptedOuterText = '';
 
-                // Bersihkan Blob URL lama jika ada
                 Object.values(cbtMediaBlobUrls).forEach(u => URL.revokeObjectURL(u));
                 cbtMediaBlobUrls = {};
 
                 if (isZipSignature(uint8)) {
-                    // Paket Native CBT (ZIP berisi naskah.enc + gambar .webp)
                     const zip = await JSZip.loadAsync(rawArrayBuffer);
                     const naskahFile = zip.file("naskah.enc");
                     if (!naskahFile) throw new Error("Paket ujian tidak valid (naskah.enc tidak ditemukan).");
@@ -642,7 +639,6 @@
             countdownJadwalInterval = setInterval(updateCd, 1000);
         }
 
-        // Fungsi pengacak array (Fisher-Yates)
         function shuffleArray(arr) {
             const copy = [...arr];
             for (let i = copy.length - 1; i > 0; i--) {
@@ -673,7 +669,6 @@
             btnMulai.disabled = true;
 
             try {
-                // Cek status aktif & batas waktu di Supabase
                 const resCek = await fetch(`${SUPABASE_URL}/rest/v1/daftar_ujian?select=is_active,batas_waktu&token=eq.${encodeURIComponent(studentData.token)}`, {
                     headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
                 });
@@ -709,6 +704,7 @@
                 const innerObj = JSON.parse(decryptedInner);
                 const modeDalam = String(innerObj.mode_ujian || (isModeCbt ? 'CBT' : 'PDF')).toUpperCase();
                 isModeCbt = (modeDalam === 'CBT') || !innerObj.pdf;
+                appData.skor_parsial = !!innerObj.skor_parsial;
 
                 if (isModeCbt) {
                     // --- INISIALISASI NASKAH MODE NATIVE CBT ---
@@ -750,6 +746,7 @@
                             jodoh_kanan: Array.isArray(s.jodoh_kanan) ? s.jodoh_kanan : [],
                             bobot: s.bobot !== undefined ? s.bobot : 1,
                             bobot_salah: s.bobot_salah !== undefined ? s.bobot_salah : 0,
+                            is_parsial: s.is_parsial !== undefined ? !!s.is_parsial : appData.skor_parsial,
                             jawabanSiswa: ''
                         };
                     });
@@ -776,12 +773,13 @@
                     document.getElementById('right-answer-card').classList.add('hidden');
                     document.getElementById('native-cbt-container').classList.remove('hidden');
                 } else {
-                    // --- INISIALISASI NASKAH MODE PDF ---
+                    // --- INISIALISASI NASKAH MODE PDF (MENDUKUNG SKOR PARSIAL) ---
                     soalList = (innerObj.soal || []).map((s, idx) => ({
                         ...s,
                         id_asli: s.id_asli || (idx + 1),
                         bobot: s.bobot !== undefined ? s.bobot : 1,
                         bobot_salah: s.bobot_salah !== undefined ? s.bobot_salah : 0,
+                        is_parsial: s.is_parsial !== undefined ? !!s.is_parsial : appData.skor_parsial,
                         jawabanSiswa: ''
                     }));
 
@@ -868,10 +866,10 @@
             const btnNext = document.getElementById('btn-next');
             if (currentIndex === soalList.length - 1) {
                 btnNext.innerText = isEn ? "Finish Exam" : "Selesai Ujian";
-                btnNext.className = "bg-red-600 text-white px-5 sm:px-6 py-2.5 rounded-lg font-bold shadow hover:bg-red-700 text-sm";
+                btnNext.className = "bg-red-600 text-white px-4 sm:px-6 py-2.5 rounded-lg font-bold shadow hover:bg-red-700 text-sm";
             } else {
                 btnNext.innerText = isEn ? "Next »" : "Selanjutnya »";
-                btnNext.className = "bg-blue-600 text-white px-5 sm:px-6 py-2.5 rounded-lg font-bold shadow hover:bg-blue-700 text-sm";
+                btnNext.className = "bg-blue-600 text-white px-4 sm:px-6 py-2.5 rounded-lg font-bold shadow hover:bg-blue-700 text-sm";
             }
 
             renderGridMap();
@@ -1133,7 +1131,7 @@
         }
 
         // =========================================================================
-        // RENDER MODE SOAL PDF (100% UTUH SEPERTI SEBELUMNYA)
+        // RENDER MODE SOAL PDF (DENGAN TOMBOL INTERAKTIF MENJODOHKAN)
         // =========================================================================
         async function renderPdfModeSoal(soal) {
             let targetPage = (soal.page_number || 1) + manualPdfOffset;
@@ -1218,11 +1216,76 @@
                     wrap.appendChild(row);
                 }
                 answerArea.appendChild(wrap);
+            } else if (type === "jodoh") {
+                // TOMBOL INTERAKTIF MENJODOHKAN (MODE PDF)
+                const jawabanList = (soal.jawabanSiswa || '').split(" ").filter(Boolean);
+                const usedNumbers = jawabanList.map(p => parseInt(p[0])).filter(n => !isNaN(n));
+                const usedLetters = jawabanList.map(p => p.slice(-1));
+
+                const wrap = document.createElement('div');
+                wrap.className = "space-y-2";
+                wrap.innerHTML = `<p class="text-xs font-bold text-blue-700 text-center">Jawaban Anda: <span class="font-black">${jawabanList.join(' ') || '-'}</span></p>`;
+
+                const rowNum = document.createElement('div');
+                rowNum.className = "flex gap-1.5 justify-between";
+                [1, 2, 3, 4, 5].forEach(num => {
+                    const isUsed = usedNumbers.includes(num);
+                    const isActive = (activeJodohPdfNum === num);
+                    const isEnabled = !isUsed && (activeJodohPdfNum === null || isActive);
+                    const btn = document.createElement('button');
+                    btn.type = "button";
+                    btn.disabled = !isEnabled;
+                    btn.innerText = num;
+                    btn.className = `flex-1 h-10 rounded-lg font-bold text-sm transition ${isActive ? 'bg-blue-600 text-white shadow' : (isEnabled ? 'bg-gray-200 text-black hover:bg-gray-300' : 'bg-gray-100 text-gray-400 cursor-not-allowed')}`;
+                    btn.onclick = () => {
+                        activeJodohPdfNum = isActive ? null : num;
+                        renderPdfModeSoal(soal);
+                    };
+                    rowNum.appendChild(btn);
+                });
+                wrap.appendChild(rowNum);
+
+                const rowChar = document.createElement('div');
+                rowChar.className = "flex gap-1.5 justify-between";
+                ["A", "B", "C", "D", "E"].forEach(chr => {
+                    const isUsed = usedLetters.includes(chr);
+                    const isEnabled = !isUsed && (activeJodohPdfNum !== null);
+                    const btn = document.createElement('button');
+                    btn.type = "button";
+                    btn.disabled = !isEnabled;
+                    btn.innerText = chr;
+                    btn.className = `flex-1 h-10 rounded-lg font-bold text-sm transition ${isEnabled ? 'bg-gray-200 text-black hover:bg-blue-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`;
+                    btn.onclick = () => {
+                        if (activeJodohPdfNum !== null) {
+                            jawabanList.push(`${activeJodohPdfNum}${chr}`);
+                            activeJodohPdfNum = null;
+                            simpanJawabanSiswa(jawabanList.join(" "));
+                        }
+                    };
+                    rowChar.appendChild(btn);
+                });
+
+                const btnDel = document.createElement('button');
+                btnDel.type = "button";
+                btnDel.innerText = "⌫";
+                btnDel.className = "flex-1 h-10 rounded-lg font-bold text-sm bg-red-600 text-white hover:bg-red-700";
+                btnDel.onclick = () => {
+                    if (activeJodohPdfNum !== null) {
+                        activeJodohPdfNum = null;
+                        renderPdfModeSoal(soal);
+                    } else if (jawabanList.length > 0) {
+                        jawabanList.pop();
+                        simpanJawabanSiswa(jawabanList.join(" "));
+                    }
+                };
+                rowChar.appendChild(btnDel);
+                wrap.appendChild(rowChar);
+                answerArea.appendChild(wrap);
             } else {
                 const isUraian = type === "uraian";
                 const input = document.createElement(isUraian ? 'textarea' : 'input');
                 input.className = "w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50";
-                input.placeholder = isUraian ? "Ketik Uraian..." : "Ketik Jawaban (Misal: 1A, 2B)";
+                input.placeholder = isUraian ? "Ketik Uraian..." : "Ketik Jawaban Singkat...";
                 if (isUraian) input.rows = 3;
                 input.value = soal.jawabanSiswa;
                 input.oninput = (e) => simpanTeksLangsungCbt(isUraian ? e.target.value : e.target.value.toUpperCase());
@@ -1253,11 +1316,11 @@
         document.getElementById('btn-pdf-prev').onclick = () => { manualPdfOffset--; renderSoal(); };
         document.getElementById('btn-pdf-next').onclick = () => { manualPdfOffset++; renderSoal(); };
         document.getElementById('btn-prev').onclick = () => {
-            if (currentIndex > 0) { currentIndex--; manualPdfOffset = 0; isWacanaCollapsed = false; renderSoal(); }
+            if (currentIndex > 0) { currentIndex--; manualPdfOffset = 0; activeJodohPdfNum = null; isWacanaCollapsed = false; renderSoal(); }
         };
         document.getElementById('btn-next').onclick = () => {
             if (currentIndex < soalList.length - 1) {
-                currentIndex++; manualPdfOffset = 0; isWacanaCollapsed = false; renderSoal();
+                currentIndex++; manualPdfOffset = 0; activeJodohPdfNum = null; isWacanaCollapsed = false; renderSoal();
             } else {
                 document.getElementById('modal-konfirmasi').classList.remove('hidden');
                 document.getElementById('checkbox-yakin').checked = false;
@@ -1310,6 +1373,7 @@
                     btn.onclick = () => {
                         currentIndex = idx;
                         manualPdfOffset = 0;
+                        activeJodohPdfNum = null;
                         isWacanaCollapsed = false;
                         document.getElementById('modal-peta-mobile').classList.add('hidden');
                         renderSoal();
@@ -1320,7 +1384,7 @@
         }
 
         // =========================================================================
-        // KOREKSI JAWABAN & KIRIM KE SUPABASE (URUT BERDASARKAN ID_ASLI)
+        // KOREKSI JAWABAN (MENDUKUNG SKOR PARSIAL & EKSAK) & KIRIM KE SUPABASE
         // =========================================================================
         async function prosesSelesaiUjian() {
             if (isSubmitting) return;
@@ -1341,43 +1405,92 @@
                 const cleanedJawab = rawJawab.replace(/,/g, '').trim();
                 const isKosong = (cleanedJawab === '');
                 const kunci = (soal.kunci || '').trim();
+                const gunakanParsial = (soal.is_parsial !== undefined) ? !!soal.is_parsial : !!appData.skor_parsial;
 
-                let isBenar = false;
-                if (!isKosong && kunci !== '') {
-                    if (soal.type.startsWith("pg_kompleks")) {
-                        const kArr = kunci.split(",").map(x => x.trim().toUpperCase()).filter(Boolean).sort().join(",");
-                        const jArr = rawJawab.split(",").map(x => x.trim().toUpperCase()).filter(Boolean).sort().join(",");
-                        isBenar = (kArr === jArr);
-                    } else if (soal.type.startsWith("tf_kompleks")) {
-                        const kArr = kunci.split(",").map(x => x.trim().toUpperCase()).join(",");
-                        const jArr = rawJawab.split(",").map(x => x.trim().toUpperCase()).join(",");
-                        isBenar = (kArr === jArr);
-                    } else if (soal.type === "jodoh") {
-                        const jBersih = rawJawab.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                        const pairs = (jBersih.match(/\d+[A-Z]/g) || []).sort().join('');
-                        const kBersih = (kunci.toUpperCase().replace(/[^A-Z0-9]/g, '').match(/\d+[A-Z]/g) || []).sort().join('');
-                        isBenar = (pairs === kBersih);
+                let isBenarPenuh = false;
+                let poinSoal = 0.0;
+
+                if (isKosong || kunci === '') {
+                    isBenarPenuh = false;
+                    poinSoal = 0.0;
+                } else if (soal.type.startsWith("pg_kompleks")) {
+                    const kunciSet = new Set(kunci.split(",").map(x => x.trim().toUpperCase()).filter(Boolean));
+                    const jawabSet = new Set(rawJawab.split(",").map(x => x.trim().toUpperCase()).filter(Boolean));
+
+                    if (!gunakanParsial) {
+                        const isMatch = (kunciSet.size === jawabSet.size && [...kunciSet].every(x => jawabSet.has(x)));
+                        isBenarPenuh = (isMatch && kunciSet.size > 0);
+                        poinSoal = isBenarPenuh ? bobotBenar : bobotSalah;
                     } else {
-                        isBenar = (rawJawab.toUpperCase() === kunci.toUpperCase());
+                        const jmlKunci = kunciSet.size;
+                        const pilihBenar = [...jawabSet].filter(x => kunciSet.has(x)).length;
+                        const pilihSalah = [...jawabSet].filter(x => !kunciSet.has(x)).length;
+                        const skorBersih = Math.max(0, pilihBenar - pilihSalah);
+                        const rasio = jmlKunci > 0 ? (skorBersih / jmlKunci) : 0.0;
+
+                        isBenarPenuh = (pilihBenar === jmlKunci && pilihSalah === 0 && jmlKunci > 0);
+                        poinSoal = (rasio > 0.0) ? (rasio * bobotBenar) : bobotSalah;
                     }
+                } else if (soal.type.startsWith("tf_kompleks")) {
+                    const kArr = kunci.split(",").map(x => x.trim().toUpperCase());
+                    const jArr = rawJawab.split(",").map(x => x.trim().toUpperCase());
+
+                    if (!gunakanParsial) {
+                        isBenarPenuh = (kArr.join(",") === jArr.join(",") && kArr.length > 0);
+                        poinSoal = isBenarPenuh ? bobotBenar : bobotSalah;
+                    } else {
+                        const totalStmt = kArr.length;
+                        let stmtBenar = 0;
+                        for (let i = 0; i < totalStmt; i++) {
+                            if (jArr[i] && jArr[i] === kArr[i]) stmtBenar++;
+                        }
+                        const rasio = totalStmt > 0 ? (stmtBenar / totalStmt) : 0.0;
+                        isBenarPenuh = (stmtBenar === totalStmt && totalStmt > 0);
+                        poinSoal = (rasio > 0.0) ? (rasio * bobotBenar) : bobotSalah;
+                    }
+                } else if (soal.type === "jodoh") {
+                    const jBersih = rawJawab.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    const pairsSiswa = [...new Set(jBersih.match(/\d+[A-Z]/g) || [])];
+                    const kBersih = kunci.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    const pairsKunci = [...new Set(kBersih.match(/\d+[A-Z]/g) || [])];
+
+                    if (!gunakanParsial) {
+                        isBenarPenuh = (pairsSiswa.slice().sort().join('') === pairsKunci.slice().sort().join('') && pairsKunci.length > 0);
+                        poinSoal = isBenarPenuh ? bobotBenar : bobotSalah;
+                    } else {
+                        const totalPasangan = pairsKunci.length;
+                        const pasanganBenar = pairsSiswa.filter(x => pairsKunci.includes(x)).length;
+                        const pasanganSalah = pairsSiswa.filter(x => !pairsKunci.includes(x)).length;
+                        const skorPasangan = (pairsSiswa.length > totalPasangan)
+                            ? Math.max(0, pasanganBenar - pasanganSalah)
+                            : pasanganBenar;
+                        const rasio = totalPasangan > 0 ? (skorPasangan / totalPasangan) : 0.0;
+
+                        isBenarPenuh = (pasanganBenar === totalPasangan && pairsSiswa.length === totalPasangan && totalPasangan > 0);
+                        poinSoal = (rasio > 0.0) ? (rasio * bobotBenar) : bobotSalah;
+                    }
+                } else {
+                    isBenarPenuh = (rawJawab.toUpperCase() === kunci.toUpperCase());
+                    poinSoal = isBenarPenuh ? bobotBenar : bobotSalah;
                 }
 
                 if (isKosong) jmlKosong++;
-                else if (isBenar) jmlBenar++;
+                else if (isBenarPenuh || poinSoal > 0.0) jmlBenar++;
                 else jmlSalah++;
 
-                const poinSoal = isBenar ? bobotBenar : (!isKosong ? bobotSalah : 0);
                 poinDidapat += poinSoal;
+                const poinBulat = Math.round((poinSoal + Number.EPSILON) * 100) / 100;
 
                 arrayJawaban.push({
                     nomor: soal.id_asli,
                     jawaban: rawJawab,
                     tipe: soal.type,
-                    is_benar: isBenar,
-                    poin: poinSoal
+                    is_benar: isBenarPenuh,
+                    poin: poinBulat
                 });
             });
 
+            const poinDidapatRapi = Math.round((poinDidapat + Number.EPSILON) * 100) / 100;
             let nilaiAkhir = totalMaxBobot > 0 ? Math.round((poinDidapat / totalMaxBobot) * 100) : 0;
             if (nilaiAkhir < 0) nilaiAkhir = 0;
 
@@ -1440,7 +1553,7 @@
                     const waktuSkrg = new Date().toLocaleString('id-ID');
                     document.getElementById('res-waktu-durasi').innerText = `Waktu Kumpul: ${waktuSkrg} | Durasi: ${mnt}m ${dtk}s`;
                     document.getElementById('res-rincian-bsk').innerText = `Benar: ${jmlBenar}  |  Salah: ${jmlSalah}  |  Tidak Dijawab: ${jmlKosong}`;
-                    document.getElementById('res-skor-mentah').innerText = `Skor Total: ${poinDidapat} / ${totalMaxBobot}`;
+                    document.getElementById('res-skor-mentah').innerText = `Skor Total: ${poinDidapatRapi} / ${totalMaxBobot}`;
                     document.getElementById('final-score').innerText = nilaiAkhir;
                 } else {
                     document.getElementById('msg-boleh-keluar').classList.remove('hidden');
