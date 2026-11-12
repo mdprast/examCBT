@@ -457,14 +457,37 @@
                 uint8[0] === 0x50 && uint8[1] === 0x4B && uint8[2] === 0x03 && uint8[3] === 0x04;
         }
 
-        async function downloadBufferFromGDrive(gdriveLink) {
-            const fileIdMatch = gdriveLink.match(/[-\w]{25,}/);
+        async function downloadBufferFromGDrive(rawLink) {
+            const link = rawLink.trim();
+
+            // 1. JIKA LINK DARI SUPABASE STORAGE, GITHUB, ATAU DIRECT LINK (Bukan Google Drive)
+            if (!link.includes('drive.google.com')) {
+                let directUrl = link;
+
+                // Otomatis ubah link GitHub biasa (/blob/) menjadi link file mentah (raw.githubusercontent.com)
+                if (link.includes('github.com') && link.includes('/blob/')) {
+                    directUrl = link
+                        .replace('https://github.com/', 'https://raw.githubusercontent.com/')
+                        .replace('/blob/', '/');
+                }
+
+                const res = await fetch(directUrl, { cache: 'no-store' });
+                if (res.ok) {
+                    const buf = await res.arrayBuffer();
+                    if (buf && buf.byteLength > 0) return buf;
+                }
+                throw new Error("Gagal mengunduh file soal dari Server/Storage. Pastikan tautan bersifat publik.");
+            }
+
+            // 2. JIKA LINK DARI GOOGLE DRIVE
+            const fileIdMatch = link.match(/[-\w]{25,}/);
             if (!fileIdMatch) throw new Error("Tautan Google Drive tidak valid.");
             const fileId = fileIdMatch[0];
-            const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+            const gdriveUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
             const proxies = [
-                `https://corsproxy.io/?${encodeURIComponent(directUrl)}`,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`
+                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(gdriveUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(gdriveUrl)}`,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(gdriveUrl)}`
             ];
             for (const pUrl of proxies) {
                 try {
@@ -475,7 +498,7 @@
                     }
                 } catch (_) {}
             }
-            throw new Error("Gagal mengunduh file dari Google Drive. Pastikan akses link diatur ke 'Siapa saja yang memiliki link'.");
+            throw new Error("Gagal mengunduh file dari Google Drive. Gunakan link Supabase Storage atau GitHub agar lebih stabil di Web.");
         }
 
         // =========================================================================
