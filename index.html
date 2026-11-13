@@ -23,12 +23,13 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; }
         .hidden-screen { display: none !important; }
         canvas { max-width: 100%; height: auto; object-fit: contain; }
-        .katex { font-size: 1.05em; }
-        /* Variasi Skala Teks Native CBT */
-        .cbt-scale-content {
-            font-size: calc(1rem * var(--cbt-text-scale, 1));
-            line-height: calc(1.55rem * var(--cbt-text-scale, 1));
-        }
+       .katex { font-size: 1.08em; }
+     /* Variasi Skala Teks Native CBT */
+     .cbt-scale-content,
+     .cbt-scale-content .teks-skala-cbt {
+         font-size: calc(1rem * var(--cbt-text-scale, 1)) !important;
+         line-height: calc(1.6rem * var(--cbt-text-scale, 1)) !important;
+     }
     </style>
 </head>
 <body class="text-gray-800 antialiased select-none flex flex-col min-h-screen h-screen overflow-hidden">
@@ -549,12 +550,16 @@
 
                 barFill.style.width = '85%';
                 const uint8 = new Uint8Array(rawArrayBuffer);
-                if (uint8.length >= 4) {
-                    uint8[0] = 0x50; // P
-                    uint8[1] = 0x4B; // K
-                    uint8[2] = 0x03;
-                    uint8[3] = 0x04;
+               if (uint8.length >= 4 &&
+                (uint8[0] ^ 0xA5) === 0x50 &&
+                (uint8[1] ^ 0xA5) === 0x4B &&
+                (uint8[2] ^ 0xA5) === 0x03 &&
+                (uint8[3] ^ 0xA5) === 0x04) {
+                for (let i = 0; i < uint8.length; i++) {
+                    uint8[i] = uint8[i] ^ 0xA5;
                 }
+            }
+                
                 let encryptedOuterText = '';
 
                 Object.values(cbtMediaBlobUrls).forEach(u => URL.revokeObjectURL(u));
@@ -1021,13 +1026,13 @@
                 <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-2">
                     <p class="text-xs font-extrabold text-emerald-900">🟩 Daftar Pilihan Pasangan (Bagian Kanan):</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        ${kananAktif.map(k => `
-                            <div class="bg-white p-2.5 rounded-lg border border-emerald-200 flex items-center space-x-2">
-                                <span class="bg-emerald-600 text-white font-black text-xs px-2 py-0.5 rounded">${k.kode}</span>
-                                <span class="text-gray-800 text-sm">${k.teks}</span>
-                            </div>
-                        `).join('')}
-                    </div>
+                     ${kananAktif.map(k => `
+                         <div class="bg-white p-2.5 rounded-lg border border-emerald-200 flex items-center space-x-2">
+                             <span class="bg-emerald-600 text-white font-black text-xs px-2 py-0.5 rounded">${k.kode}</span>
+                             <span class="text-gray-800 teks-skala-cbt">${k.teks}</span>
+                         </div>
+                     `).join('')}
+                 </div>
                 </div>
                 <p class="text-xs font-bold text-blue-900">🟦 Ketuk huruf pasangan yang tepat untuk setiap pernyataan di bawah:</p>
                 <div class="space-y-2.5">`;
