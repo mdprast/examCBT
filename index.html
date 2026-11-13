@@ -902,7 +902,7 @@
                         </button>
                     </div>
                     ${!isWacanaCollapsed ? `
-                        <div class="text-gray-800 whitespace-pre-line">${soal.teks_wacana || ''}</div>
+                        <div class="text-gray-800 teks-skala-cbt whitespace-pre-line">${soal.teks_wacana || ''}</div>
                         ${imgWUrl ? `
                             <div class="bg-white p-2 rounded-lg border text-center">
                                 <img src="${imgWUrl}" onclick="bukaZoomGambar('${imgWUrl}')" class="max-h-60 mx-auto object-contain cursor-zoom-in rounded">
@@ -917,7 +917,7 @@
             const imgSUrl = soal.img_soal ? cbtMediaBlobUrls[soal.img_soal.split('/').pop()] : null;
             html += `
             <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
-                <div class="text-gray-900 font-medium whitespace-pre-line">${soal.teks_soal || ''}</div>
+                <div class="text-gray-900 font-medium teks-skala-cbt whitespace-pre-line">${soal.teks_soal || ''}</div>
                 ${imgSUrl ? `
                     <div class="bg-gray-50 p-2 rounded-lg border text-center">
                         <img src="${imgSUrl}" onclick="bukaZoomGambar('${imgSUrl}')" class="max-h-64 mx-auto object-contain cursor-zoom-in rounded bg-white">
@@ -954,7 +954,7 @@
                             ${isKompleks && isSelected ? '✓' : labelHuruf}
                         </div>
                         <div class="flex-1 space-y-2">
-                            <div class="${isSelected ? 'font-bold text-blue-950' : 'text-gray-800'}">${op.teks || ''}</div>
+                            <div class="${isSelected ? 'font-bold text-blue-950' : 'text-gray-800'} teks-skala-cbt">${op.teks || ''}</div>
                             ${imgOpUrl ? `
                                 <img src="${imgOpUrl}" onclick="event.stopPropagation(); bukaZoomGambar('${imgOpUrl}')" class="max-h-40 rounded border bg-white p-1 object-contain">
                             ` : ''}
@@ -988,7 +988,7 @@
 
                     html += `
                             <tr class="hover:bg-slate-50">
-                                <td class="p-3 border-r text-gray-800">${count > 1 ? `<b>${i + 1}.</b> ` : ''}${teksP}</td>
+                                <td class="p-3 border-r text-gray-800 teks-skala-cbt">${count > 1 ? `<b>${i + 1}.</b> ` : ''}${teksP}</td>
                                 <td class="p-2 border-r text-center ${isB ? 'bg-green-50' : ''}">
                                     <button type="button" onclick="pilihTfNativeCbt(${i}, ${count}, 'B')" class="w-12 h-9 rounded-lg font-black text-xs border-2 transition ${isB ? 'bg-green-600 text-white border-green-700' : 'bg-white text-green-700 border-green-300 hover:bg-green-50'}">
                                         ${isB ? '✓ B' : 'B'}
@@ -1044,7 +1044,7 @@
                     <div class="bg-white border ${chosenChr ? 'border-blue-500' : 'border-gray-200'} rounded-xl p-3.5 space-y-2.5 shadow-sm">
                         <div class="flex items-start space-x-2.5">
                             <span class="bg-blue-600 text-white font-black text-xs px-2.5 py-1 rounded">${kiri.no}</span>
-                            <span class="font-semibold text-gray-900 flex-1">${kiri.teks}</span>
+                            <span class="font-semibold text-gray-900 teks-skala-cbt flex-1">${kiri.teks}</span>
                         </div>
                         <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
                             <span class="text-xs font-bold text-gray-500 mr-1">Pasangkan:</span>
