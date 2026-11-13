@@ -549,6 +549,12 @@
 
                 barFill.style.width = '85%';
                 const uint8 = new Uint8Array(rawArrayBuffer);
+                if (uint8.length >= 4) {
+                    uint8[0] = 0x50; // P
+                    uint8[1] = 0x4B; // K
+                    uint8[2] = 0x03;
+                    uint8[3] = 0x04;
+                }
                 let encryptedOuterText = '';
 
                 Object.values(cbtMediaBlobUrls).forEach(u => URL.revokeObjectURL(u));
