@@ -301,13 +301,18 @@
     <div id="modal-konfirmasi" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[140] p-4">
         <div class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl">
             <h2 id="lbl-konfirmasi-judul" class="text-xl font-bold mb-2">Konfirmasi Selesai</h2>
+            <!-- Kotak Peringatan Jika Ada Soal Belum Dijawab -->
+            <div id="box-belum-terjawab" class="hidden bg-amber-50 border border-amber-400 text-amber-900 p-3 rounded-xl mb-3 text-xs space-y-1">
+                <p id="teks-jml-belum-terjawab" class="font-bold text-amber-900"></p>
+                <p id="teks-nomor-belum-terjawab" class="font-black text-amber-800"></p>
+            </div>
             <p id="lbl-konfirmasi-isi" class="text-gray-600 text-sm mb-4">Yakin mengakhiri ujian? Jawaban Anda tidak akan bisa diubah lagi setelah menekan tombol kumpulkan.</p>
             <label class="flex items-start gap-2.5 mb-6 cursor-pointer bg-gray-50 p-3 rounded-lg border">
                 <input type="checkbox" id="checkbox-yakin" class="mt-0.5 w-4 h-4 accent-blue-600">
                 <span id="lbl-konfirmasi-cek" class="text-xs font-semibold text-gray-700 leading-relaxed">Saya yakin untuk menyelesaikan ujian dan mengirimkan jawaban.</span>
             </label>
             <div class="flex justify-end gap-2">
-                <button type="button" id="btn-batal-kumpul" class="px-4 py-2.5 bg-gray-200 rounded-xl font-bold text-sm">Batal</button>
+                <button type="button" id="btn-batal-kumpul" class="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-bold text-sm">Kembali ke Soal</button>
                 <button type="button" id="btn-yakin-kumpul" class="px-5 py-2.5 bg-gray-400 text-white rounded-xl font-bold text-sm cursor-not-allowed" disabled>Ya, Kumpulkan</button>
             </div>
         </div>
@@ -1329,31 +1334,77 @@
         document.getElementById('btn-prev').onclick = () => {
             if (currentIndex > 0) { currentIndex--; manualPdfOffset = 0; activeJodohPdfNum = null; isWacanaCollapsed = false; renderSoal(); }
         };
+        let firstUnansweredIdx = null;
+
         document.getElementById('btn-next').onclick = () => {
             if (currentIndex < soalList.length - 1) {
                 currentIndex++; manualPdfOffset = 0; activeJodohPdfNum = null; isWacanaCollapsed = false; renderSoal();
             } else {
+                const belumTerjawab = [];
+                firstUnansweredIdx = null;
+                soalList.forEach((s, idx) => {
+                    if ((s.jawabanSiswa || '').replace(/,/g, '').trim() === '') {
+                        belumTerjawab.push(idx + 1);
+                        if (firstUnansweredIdx === null) firstUnansweredIdx = idx;
+                    }
+                });
+
+                const boxWarn = document.getElementById('box-belum-terjawab');
+                const judulModal = document.getElementById('lbl-konfirmasi-judul');
+                const btnYakin = document.getElementById('btn-yakin-kumpul');
+                const btnBatal = document.getElementById('btn-batal-kumpul');
+
+                btnBatal.innerText = isEn ? "Back to Question" : "Kembali ke Soal";
+
+                if (belumTerjawab.length > 0) {
+                    judulModal.innerText = isEn ? "⚠️ Unanswered Questions!" : "⚠️ Ada Soal Belum Dijawab!";
+                    judulModal.className = "text-xl font-bold mb-2 text-amber-600";
+                    document.getElementById('teks-jml-belum-terjawab').innerText = isEn
+                        ? `There are still ${belumTerjawab.length} unanswered questions:`
+                        : `Masih ada ${belumTerjawab.length} soal yang belum Anda jawab:`;
+                    document.getElementById('teks-nomor-belum-terjawab').innerText = `${isEn ? 'Question No' : 'Nomor'}: ${belumTerjawab.join(', ')}`;
+                    boxWarn.classList.remove('hidden');
+                    btnYakin.innerText = isEn ? "Submit Anyway" : "Tetap Kumpulkan";
+                    btnYakin.dataset.hasUnanswered = "1";
+                } else {
+                    judulModal.innerText = isEn ? "Finish Confirmation" : "Konfirmasi Selesai";
+                    judulModal.className = "text-xl font-bold mb-2 text-gray-900";
+                    boxWarn.classList.add('hidden');
+                    btnYakin.innerText = isEn ? "Yes, Submit" : "Ya, Kumpulkan";
+                    btnYakin.dataset.hasUnanswered = "0";
+                }
+
                 document.getElementById('modal-konfirmasi').classList.remove('hidden');
                 document.getElementById('checkbox-yakin').checked = false;
-                document.getElementById('btn-yakin-kumpul').disabled = true;
-                document.getElementById('btn-yakin-kumpul').className = "px-5 py-2.5 bg-gray-400 text-white rounded-xl font-bold text-sm cursor-not-allowed";
+                btnYakin.disabled = true;
+                btnYakin.className = "px-5 py-2.5 bg-gray-400 text-white rounded-xl font-bold text-sm cursor-not-allowed";
             }
         };
 
         document.getElementById('checkbox-yakin').addEventListener('change', (e) => {
             const btn = document.getElementById('btn-yakin-kumpul');
+            const isWarn = btn.dataset.hasUnanswered === "1";
             if (e.target.checked) {
                 btn.disabled = false;
-                btn.className = "px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm cursor-pointer shadow";
+                btn.className = isWarn
+                    ? "px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm cursor-pointer shadow"
+                    : "px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm cursor-pointer shadow";
             } else {
                 btn.disabled = true;
                 btn.className = "px-5 py-2.5 bg-gray-400 text-white rounded-xl font-bold text-sm cursor-not-allowed";
             }
         });
 
-        document.getElementById('btn-batal-kumpul').onclick = () => document.getElementById('modal-konfirmasi').classList.add('hidden');
-        document.getElementById('btn-yakin-kumpul').onclick = () => {
+        document.getElementById('btn-batal-kumpul').onclick = () => {
             document.getElementById('modal-konfirmasi').classList.add('hidden');
+            if (firstUnansweredIdx !== null) {
+                currentIndex = firstUnansweredIdx;
+                manualPdfOffset = 0;
+                activeJodohPdfNum = null;
+                isWacanaCollapsed = false;
+                renderSoal();
+            }
+        };
             prosesSelesaiUjian();
         };
 
