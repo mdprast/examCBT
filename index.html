@@ -1405,9 +1405,12 @@
                 renderSoal();
             }
         };
+
+        document.getElementById('btn-yakin-kumpul').onclick = () => {
+            document.getElementById('modal-konfirmasi').classList.add('hidden');
             prosesSelesaiUjian();
         };
-
+        
         function bukaModalPetaMobile() {
             document.getElementById('modal-peta-mobile').classList.remove('hidden');
         }
