@@ -644,6 +644,10 @@
         function kembaliKeFullscreen() {
             document.documentElement.requestFullscreen().then(() => {
                 document.getElementById('modal-fullscreen-lock').classList.add('hidden');
+                // Paksa render ulang agar area soal tidak nyangkut/nge-blank setelah kembali dari Full-Screen
+                setTimeout(() => {
+                    renderSoal();
+                }, 200);
             }).catch(err => {
                 alert("Browser Anda menolak akses Full Screen. Tekan F11 pada keyboard Anda secara manual.");
             });
@@ -1387,15 +1391,24 @@
                         ${isUraian ? '✍️ Ketik Jawaban Uraian Anda di Bawah Ini:' : '✍️ Ketik Jawaban Singkat Anda di Bawah Ini:'}
                     </label>
                     ${isUraian ? `
-                        <textarea rows="5" placeholder="Ketik jawaban uraian lengkap di sini..." class="w-full border-2 border-gray-300 rounded-xl p-3 outline-none focus:border-blue-600" oninput="simpanTeksLangsungCbt(this.value)" onfocus="setTimeout(()=>this.scrollIntoView({behavior:'smooth', block:'center'}), 300)">${soal.jawabanSiswa || ''}</textarea>
+                        <textarea rows="5" placeholder="Ketik jawaban uraian lengkap di sini..." class="input-auto-scroll w-full border-2 border-gray-300 rounded-xl p-3 outline-none focus:border-blue-600" oninput="simpanTeksLangsungCbt(this.value)">${soal.jawabanSiswa || ''}</textarea>
                     ` : `
-                        <input type="text" value="${(soal.jawabanSiswa || '').replace(/"/g, '&quot;')}" placeholder="Ketik jawaban singkat..." class="w-full border-2 border-gray-300 rounded-xl p-3 font-bold uppercase outline-none focus:border-blue-600" oninput="simpanTeksLangsungCbt(this.value.toUpperCase())" onfocus="setTimeout(()=>this.scrollIntoView({behavior:'smooth', block:'center'}), 300)">
+                        <input type="text" value="${(soal.jawabanSiswa || '').replace(/"/g, '&quot;')}" placeholder="Ketik jawaban singkat..." class="input-auto-scroll w-full border-2 border-gray-300 rounded-xl p-3 font-bold uppercase outline-none focus:border-blue-600" oninput="simpanTeksLangsungCbt(this.value.toUpperCase())">
                     `}
                 </div>`;
             }
 
             container.innerHTML = html;
             renderMathKaTeX(container);
+            
+            // Pasang Event Listener Auto-Scroll secara Native
+            container.querySelectorAll('.input-auto-scroll').forEach(el => {
+                el.addEventListener('focus', function() {
+                    setTimeout(() => {
+                        this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 350);
+                });
+            });
         }
 
         function pilihOpsiNativeCbt(kodeAsli, isKompleks) {
@@ -1614,12 +1627,12 @@
                 input.value = soal.jawabanSiswa;
                 input.oninput = (e) => simpanTeksLangsungCbt(isUraian ? e.target.value : e.target.value.toUpperCase());
                 
-                // Tambahan: Auto-scroll ke tengah layar saat keyboard muncul
-                input.onfocus = function() {
+                // Tambahan: Auto-scroll ke tengah layar saat keyboard muncul (Delay 350ms agar animasi selesai)
+                input.addEventListener('focus', function() {
                     setTimeout(() => {
                         this.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 300);
-                };
+                    }, 350);
+                });
                 
                 answerArea.appendChild(input);
             }
