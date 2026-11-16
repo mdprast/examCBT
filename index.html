@@ -23,13 +23,13 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; }
         .hidden-screen { display: none !important; }
         canvas { max-width: 100%; height: auto; object-fit: contain; }
-       .katex { font-size: 1.08em; }
-     /* Variasi Skala Teks Native CBT */
-     .cbt-scale-content,
-     .cbt-scale-content .teks-skala-cbt {
-         font-size: calc(1rem * var(--cbt-text-scale, 1)) !important;
-         line-height: calc(1.6rem * var(--cbt-text-scale, 1)) !important;
-     }
+        .katex { font-size: 1.08em; }
+        /* Variasi Skala Teks Native CBT */
+        .cbt-scale-content,
+        .cbt-scale-content .teks-skala-cbt {
+            font-size: calc(1rem * var(--cbt-text-scale, 1)) !important;
+            line-height: calc(1.6rem * var(--cbt-text-scale, 1)) !important;
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased select-none flex flex-col min-h-screen h-screen overflow-hidden">
@@ -72,7 +72,7 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- SCREEN 1: SINKRONISASI CLOUD & UNDUH SOAL                           -->
+    <!-- SCREEN 1: LOGIN PESERTA, SINKRONISASI CLOUD & FILE MANUAL           -->
     <!-- =================================================================== -->
     <div id="screen-unduh" class="flex-1 overflow-y-auto flex flex-col items-center justify-center p-6">
         <div class="w-full max-w-md flex flex-col items-center">
@@ -80,20 +80,39 @@
                 CBT
             </div>
             <h1 id="title-app" class="text-2xl sm:text-3xl font-black text-blue-700 text-center">APLIKASI EXAM-CBT</h1>
-            <p class="text-xs font-bold text-blue-500 mt-1 mb-6">Web Edition v2.1 (PDF & Native CBT)</p>
+            <p class="text-xs font-bold text-blue-500 mt-1 mb-6">Web Edition v2.2 (Hybrid Login & Cloud)</p>
 
-            <!-- Tab Menu: Sinkron Cloud vs File Manual -->
-            <div class="grid grid-cols-2 w-full bg-gray-200 p-1 rounded-xl mb-4">
-                <button type="button" id="tab-sync-cloud" onclick="switchUnduhTab(0)" class="py-2 rounded-lg font-bold text-sm bg-white text-blue-700 shadow transition">
-                    ☁️ Sinkron Cloud
+            <!-- Tab Menu 3 Mode: Login Peserta | Kode Soal (Cloud) | File Manual -->
+            <div class="grid grid-cols-3 w-full bg-gray-200 p-1 rounded-xl mb-4 gap-1">
+                <button type="button" id="tab-login-peserta" onclick="switchUnduhTab(0)" class="py-2 rounded-lg font-bold text-xs sm:text-sm bg-white text-blue-700 shadow transition">
+                    🔑 Login
                 </button>
-                <button type="button" id="tab-manual-file" onclick="switchUnduhTab(1)" class="py-2 rounded-lg font-bold text-sm text-gray-600 hover:text-gray-900 transition">
-                    📂 File Manual
+                <button type="button" id="tab-sync-cloud" onclick="switchUnduhTab(1)" class="py-2 rounded-lg font-bold text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition">
+                    ☁️ Kode Soal
+                </button>
+                <button type="button" id="tab-manual-file" onclick="switchUnduhTab(2)" class="py-2 rounded-lg font-bold text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition">
+                    📂 Manual
                 </button>
             </div>
 
             <div class="bg-white p-6 rounded-2xl shadow-md w-full border border-gray-200">
-                <!-- Area Input Khusus Tab Manual -->
+                
+                <!-- AREA TAB 0: MODE LOGIN PESERTA -->
+                <div id="box-login-mode" class="space-y-4">
+                    <div class="text-center">
+                        <h3 id="lbl-login-title" class="font-bold text-base text-blue-700">Login Akun Peserta Ujian</h3>
+                        <p id="lbl-login-sub" class="text-[11px] text-gray-500 mt-0.5">Gunakan Username & Password dari Kartu Login Guru</p>
+                    </div>
+                    <div>
+                        <input type="text" id="login-username" placeholder="Username / NIS" oninput="this.value = this.value.replace(/\s/g, '')" class="w-full border border-gray-300 p-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-600"/>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="login-password" placeholder="Password" class="w-full border border-gray-300 p-3 pr-10 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-600"/>
+                        <button type="button" onclick="toggleShowPassword()" id="btn-eye-pass" class="absolute right-3 top-3 text-gray-500 hover:text-gray-800 text-base">👁️</button>
+                    </div>
+                </div>
+
+                <!-- AREA TAB 2: INPUT FILE / LINK MANUAL -->
                 <div id="box-manual-input" class="hidden mb-5 pb-5 border-b border-gray-200">
                     <label id="lbl-ambil-file" class="block font-bold text-sm text-gray-700 mb-2 text-center">Ambil File Soal (.enc)</label>
                     <div class="relative mb-3">
@@ -104,12 +123,14 @@
                     <input type="file" id="file-input" accept=".enc" class="block w-full text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"/>
                 </div>
 
-                <!-- Input Kode Sinkronisasi (Token) -->
-                <label id="lbl-token-title" class="block font-bold text-base text-blue-700 text-center mb-2">Kode Sinkronisasi (Token Soal)</label>
-                <input type="text" id="token-input" placeholder="Ketik Kode Token dari Guru" oninput="this.value = this.value.replace(/\s/g, '').toUpperCase()" class="w-full border-2 border-blue-400 p-3 rounded-xl mb-5 outline-none focus:ring-2 focus:ring-blue-600 uppercase font-black text-lg text-center tracking-wider text-blue-900"/>
+                <!-- AREA TAB 1 & TAB 2: INPUT KODE SINKRONISASI SOAL -->
+                <div id="box-token-mode" class="hidden">
+                    <label id="lbl-token-title" class="block font-bold text-base text-blue-700 text-center mb-2">Kode Sinkronisasi Soal</label>
+                    <input type="text" id="token-input" placeholder="Ketik Kode Sinkronisasi Soal dari Guru" oninput="this.value = this.value.replace(/\s/g, '').toUpperCase()" class="w-full border-2 border-blue-400 p-3 rounded-xl mb-1 outline-none focus:ring-2 focus:ring-blue-600 uppercase font-black text-lg text-center tracking-wider text-blue-900"/>
+                </div>
 
-                <button type="button" id="btn-buka-soal" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-md">
-                    Sinkronisasi & Unduh Paket Soal
+                <button type="button" id="btn-buka-soal" class="w-full mt-5 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-md">
+                    Masuk & Unduh Paket Soal
                 </button>
 
                 <!-- Progress Bar Animasi -->
@@ -124,7 +145,7 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- SCREEN 2: ISI IDENTITAS SISWA & PIN PENGAWAS                        -->
+    <!-- SCREEN 2: ISI IDENTITAS SISWA & TOKEN UJIAN                         -->
     <!-- =================================================================== -->
     <div id="screen-identitas" class="hidden-screen flex-1 overflow-y-auto p-6 flex flex-col items-center">
         <div class="w-full max-w-md space-y-4 pb-16">
@@ -148,8 +169,12 @@
 
             <!-- Form Identitas Siswa -->
             <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-3">
-                <h3 id="lbl-isi-identitas" class="font-bold text-gray-800 border-b pb-2">Isi Identitas Anda</h3>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h3 id="lbl-isi-identitas" class="font-bold text-gray-800">Isi Identitas Anda</h3>
+                    <span id="badge-verified-login" class="hidden text-[10px] bg-green-100 text-green-800 border border-green-400 font-bold px-2 py-0.5 rounded-md">🔒 Terverifikasi Server</span>
+                </div>
                 <input type="text" id="nama-input" placeholder="Nama Lengkap (Wajib)" class="w-full border p-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 font-semibold"/>
+                <input type="text" id="nis-input" placeholder="NIS / NISN" class="hidden w-full border p-3 rounded-lg text-sm outline-none bg-gray-100 text-gray-700 font-semibold" readonly/>
                 <input type="text" id="sekolah-input" placeholder="Asal Sekolah (Opsional)" class="w-full border p-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"/>
                 <div class="flex gap-3">
                     <input type="text" id="kelas-input" placeholder="Kelas" class="w-1/2 border p-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"/>
@@ -163,14 +188,14 @@
                 </div>
             </div>
 
-            <!-- Kotak Countdown Jadwal & Input PIN Pengawas -->
+            <!-- Kotak Countdown Jadwal & Input Token Ujian -->
             <div class="bg-amber-50 p-4 rounded-xl text-center border border-amber-300 shadow-sm space-y-2">
                 <div id="box-countdown-mulai" class="hidden">
                     <p id="lbl-countdown-title" class="text-xs text-gray-600">Jadwal Ujian Dimulai Dalam:</p>
                     <p id="val-countdown-mulai" class="text-2xl font-black text-amber-600">00:00</p>
                 </div>
-                <p id="lbl-tunggu-pin" class="text-xs text-gray-700 font-medium">Tunggu aba-aba pengawas untuk PIN Pengawas (Mulai Ujian)</p>
-                <input type="text" id="pin-input" placeholder="PIN Pengawas (Buka Soal)" oninput="this.value = this.value.replace(/\s/g, '').toUpperCase()" class="w-full border-2 border-red-400 p-3 rounded-xl text-red-600 font-black text-lg outline-none focus:ring-2 focus:ring-red-500 text-center uppercase bg-white"/>
+                <p id="lbl-tunggu-pin" class="text-xs text-gray-700 font-medium">Tunggu aba-aba pengawas untuk Token Ujian (Mulai Ujian)</p>
+                <input type="text" id="pin-input" placeholder="Token Ujian (Buka Soal)" oninput="this.value = this.value.replace(/\s/g, '').toUpperCase()" class="w-full border-2 border-red-400 p-3 rounded-xl text-red-600 font-black text-lg outline-none focus:ring-2 focus:ring-red-500 text-center uppercase bg-white"/>
             </div>
 
             <button type="button" id="btn-mulai" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-md">
@@ -334,20 +359,22 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtcmprdnd0dmF6cWdjcG9pc3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNjM2NjQsImV4cCI6MjEwMjYzOTY2NH0.dzggikCaHFqaqwdtZTMHsNsz7oK4l9se2ekTgfHSIBU';
 
         let isEn = false;
-        let selectedUnduhTab = 0; // 0 = Cloud Sync, 1 = Manual File/Link
+        let selectedUnduhTab = 0; // 0 = Login Peserta, 1 = Kode Soal (Cloud), 2 = Manual File/Link
+        let isLoginMode = false;
+        let idPesertaLogin = '';
         let brightnessLevel = 1.0;
         let cbtTextScale = 1.0;
         let isWacanaCollapsed = false;
-        let activeJodohPdfNum = null; // State tombol angka aktif untuk soal Menjodohkan pada Mode PDF
+        let activeJodohPdfNum = null;
 
         let appData = {
             mapel: '', id_guru: '', waktu: 90, tanggal: '', nama_ujian: 'Ujian CBT',
             tampilkan_skor: true, mode_ujian: 'PDF', skor_parsial: false, secure_data: ''
         };
         let isModeCbt = false;
-        let cbtMediaBlobUrls = {}; // { 'soal_1.webp': 'blob:...' }
+        let cbtMediaBlobUrls = {};
 
-        let studentData = { nama: '', sekolah: '', kelas: '', absen: '', ruang: '', noUjian: '', token: '' };
+        let studentData = { nama: '', nis: '', sekolah: '', kelas: '', absen: '', ruang: '', noUjian: '', token: '' };
         let pdfDoc = null, soalList = [], currentIndex = 0, sisaWaktu = 0, timerInterval = null, countdownJadwalInterval = null;
         let isUjianActive = false, isSubmitting = false, manualPdfOffset = 0, waktuMulaiMillis = 0;
         let pelanggaranCount = 0;
@@ -356,8 +383,48 @@
         const absenSelect = document.getElementById('absen-input');
         for (let i = 1; i <= 40; i++) {
             const opt = document.createElement('option');
-            opt.value = i; opt.text = i;
+            opt.value = String(i);
+            opt.text = String(i);
             absenSelect.appendChild(opt);
+        }
+
+        // Fungsi Update Status Live Peserta ke Supabase (RPC + Fallback PATCH)
+        async function updateStatusPesertaServer(idPeserta, statusBaru) {
+            if (!idPeserta) return;
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/update_status_peserta`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({ p_id: String(idPeserta), p_status: statusBaru })
+                });
+                if (!res.ok) {
+                    await fetch(`${SUPABASE_URL}/rest/v1/peserta_ujian?id=eq.${encodeURIComponent(idPeserta)}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        },
+                        body: JSON.stringify({ status_mengerjakan: statusBaru })
+                    });
+                }
+            } catch (_) {}
+        }
+
+        function toggleShowPassword() {
+            const passInput = document.getElementById('login-password');
+            const eyeBtn = document.getElementById('btn-eye-pass');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeBtn.innerText = '🙈';
+            } else {
+                passInput.type = 'password';
+                eyeBtn.innerText = '👁️';
+            }
         }
 
         // =========================================================================
@@ -386,29 +453,118 @@
             isEn = !isEn;
             document.getElementById('btn-lang-toggle').innerText = isEn ? '🇬🇧 EN' : '🇮🇩 ID';
             document.getElementById('title-app').innerText = isEn ? 'EXAM-CBT APP' : 'APLIKASI EXAM-CBT';
-            document.getElementById('tab-sync-cloud').innerText = isEn ? '☁️ Cloud Sync' : '☁️ Sinkron Cloud';
-            document.getElementById('tab-manual-file').innerText = isEn ? '📂 Manual Mode' : '📂 File Manual';
+            document.getElementById('tab-login-peserta').innerText = isEn ? '🔑 Login' : '🔑 Login';
+            document.getElementById('tab-sync-cloud').innerText = isEn ? '☁️ Exam Code' : '☁️ Kode Soal';
+            document.getElementById('tab-manual-file').innerText = isEn ? '📂 Manual' : '📂 Manual';
+            document.getElementById('lbl-login-title').innerText = isEn ? 'Student Account Login' : 'Login Akun Peserta Ujian';
+            document.getElementById('lbl-login-sub').innerText = isEn ? 'Use Username & Password from your Teacher' : 'Gunakan Username & Password dari Kartu Login Guru';
+            document.getElementById('login-username').placeholder = isEn ? 'Username / Student ID (NIS)' : 'Username / NIS';
             document.getElementById('lbl-ambil-file').innerText = isEn ? 'Load Exam File (.enc)' : 'Ambil File Soal (.enc)';
-            document.getElementById('lbl-token-title').innerText = isEn ? 'Enter Sync Code (Exam Token)' : 'Kode Sinkronisasi (Token Soal)';
-            document.getElementById('btn-buka-soal').innerText = isEn ? 'Sync & Download Exam' : 'Sinkronisasi & Unduh Paket Soal';
-            document.getElementById('btn-batal-sinkron').innerText = isEn ? '← Cancel & Re-sync' : '← Batal & Sinkron Ulang';
+            document.getElementById('lbl-token-title').innerText = isEn ? 'Enter Exam Sync Code' : 'Kode Sinkronisasi Soal';
+            document.getElementById('token-input').placeholder = isEn ? 'Enter Exam Sync Code from Teacher' : 'Ketik Kode Sinkronisasi Soal dari Guru';
+            document.getElementById('btn-buka-soal').innerText = (selectedUnduhTab === 0)
+                ? (isEn ? 'Login & Download Exam' : 'Masuk & Unduh Paket Soal')
+                : (isEn ? 'Sync & Download Exam' : 'Sinkronisasi & Unduh Paket Soal');
+            document.getElementById('btn-batal-sinkron').innerText = isLoginMode
+                ? (isEn ? '← Logout / Switch Account' : '← Ganti Akun / Keluar')
+                : (isEn ? '← Cancel & Re-sync' : '← Batal & Sinkron Ulang');
             document.getElementById('lbl-info-paket').innerText = isEn ? 'Exam Package Ready' : 'Informasi Paket Ujian (Siap)';
-            document.getElementById('lbl-isi-identitas').innerText = isEn ? 'Fill in Your Identity' : 'Isi Identitas Anda';
+            document.getElementById('lbl-isi-identitas').innerText = isLoginMode
+                ? (isEn ? 'Student Identity' : 'Identitas Peserta')
+                : (isEn ? 'Fill in Your Identity' : 'Isi Identitas Anda');
+            document.getElementById('badge-verified-login').innerText = isEn ? '🔒 Verified by Server' : '🔒 Terverifikasi Server';
             document.getElementById('nama-input').placeholder = isEn ? 'Full Name (Required)' : 'Nama Lengkap (Wajib)';
             document.getElementById('sekolah-input').placeholder = isEn ? 'School Origin (Optional)' : 'Asal Sekolah (Opsional)';
+            document.getElementById('lbl-tunggu-pin').innerText = isEn
+                ? "Wait for proctor's instruction for Exam Token"
+                : "Tunggu aba-aba pengawas untuk Token Ujian (Mulai Ujian)";
+            document.getElementById('pin-input').placeholder = isEn ? 'Exam Token (Unlock Exam)' : 'Token Ujian (Buka Soal)';
             document.getElementById('btn-mulai').innerText = isEn ? 'Unlock & Start Exam Now' : 'Buka Gembok & Mulai Ujian';
         }
 
         function switchUnduhTab(tabIdx) {
             selectedUnduhTab = tabIdx;
-            const isManual = (tabIdx === 1);
-            document.getElementById('box-manual-input').classList.toggle('hidden', !isManual);
-            document.getElementById('tab-sync-cloud').className = !isManual
-                ? "py-2 rounded-lg font-bold text-sm bg-white text-blue-700 shadow transition"
-                : "py-2 rounded-lg font-bold text-sm text-gray-600 hover:text-gray-900 transition";
-            document.getElementById('tab-manual-file').className = isManual
-                ? "py-2 rounded-lg font-bold text-sm bg-white text-blue-700 shadow transition"
-                : "py-2 rounded-lg font-bold text-sm text-gray-600 hover:text-gray-900 transition";
+            const activeClass = "py-2 rounded-lg font-bold text-xs sm:text-sm bg-white text-blue-700 shadow transition";
+            const inactiveClass = "py-2 rounded-lg font-bold text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition";
+
+            document.getElementById('tab-login-peserta').className = (tabIdx === 0) ? activeClass : inactiveClass;
+            document.getElementById('tab-sync-cloud').className = (tabIdx === 1) ? activeClass : inactiveClass;
+            document.getElementById('tab-manual-file').className = (tabIdx === 2) ? activeClass : inactiveClass;
+
+            document.getElementById('box-login-mode').classList.toggle('hidden', tabIdx !== 0);
+            document.getElementById('box-manual-input').classList.toggle('hidden', tabIdx !== 2);
+            document.getElementById('box-token-mode').classList.toggle('hidden', tabIdx === 0);
+
+            document.getElementById('btn-buka-soal').innerText = (tabIdx === 0)
+                ? (isEn ? 'Login & Download Exam' : 'Masuk & Unduh Paket Soal')
+                : (isEn ? 'Sync & Download Exam' : 'Sinkronisasi & Unduh Paket Soal');
+        }
+
+        function aturKunciFormIdentitas(locked, dataPeserta = null) {
+            const namaEl = document.getElementById('nama-input');
+            const nisEl = document.getElementById('nis-input');
+            const sekolahEl = document.getElementById('sekolah-input');
+            const kelasEl = document.getElementById('kelas-input');
+            const absenEl = document.getElementById('absen-input');
+            const ruangEl = document.getElementById('ruang-input');
+            const noUjianEl = document.getElementById('noujian-input');
+            const badgeVerif = document.getElementById('badge-verified-login');
+
+            if (locked && dataPeserta) {
+                const bersihkan = (v) => (v && String(v) !== 'null') ? String(v).trim() : '';
+                namaEl.value = bersihkan(dataPeserta.nama_siswa);
+                nisEl.value = bersihkan(dataPeserta.nis);
+                sekolahEl.value = bersihkan(dataPeserta.asal_sekolah);
+                kelasEl.value = bersihkan(dataPeserta.kelas);
+                ruangEl.value = bersihkan(dataPeserta.ruang);
+                noUjianEl.value = bersihkan(dataPeserta.no_ujian);
+
+                const valAbsen = bersihkan(dataPeserta.no_absen);
+                if (valAbsen) {
+                    let optExists = Array.from(absenEl.options).some(o => o.value === valAbsen);
+                    if (!optExists) {
+                        const customOpt = document.createElement('option');
+                        customOpt.value = valAbsen;
+                        customOpt.text = valAbsen;
+                        absenEl.appendChild(customOpt);
+                    }
+                    absenEl.value = valAbsen;
+                } else {
+                    absenEl.value = '';
+                }
+
+                nisEl.classList.toggle('hidden', !nisEl.value);
+                badgeVerif.classList.remove('hidden');
+                document.getElementById('lbl-isi-identitas').innerText = isEn ? 'Student Identity' : 'Identitas Peserta';
+                document.getElementById('btn-batal-sinkron').innerText = isEn ? '← Logout / Switch Account' : '← Ganti Akun / Keluar';
+            } else {
+                namaEl.value = '';
+                nisEl.value = '';
+                sekolahEl.value = '';
+                kelasEl.value = '';
+                absenEl.value = '';
+                ruangEl.value = '';
+                noUjianEl.value = '';
+                nisEl.classList.add('hidden');
+                badgeVerif.classList.add('hidden');
+                document.getElementById('lbl-isi-identitas').innerText = isEn ? 'Fill in Your Identity' : 'Isi Identitas Anda';
+                document.getElementById('btn-batal-sinkron').innerText = isEn ? '← Cancel & Re-sync' : '← Batal & Sinkron Ulang';
+            }
+
+            [namaEl, sekolahEl, kelasEl, ruangEl, noUjianEl].forEach(el => {
+                el.readOnly = locked;
+                if (locked) {
+                    el.classList.add('bg-gray-100', 'text-gray-700');
+                } else {
+                    el.classList.remove('bg-gray-100', 'text-gray-700');
+                }
+            });
+            absenEl.disabled = locked;
+            if (locked) {
+                absenEl.classList.add('bg-gray-100', 'text-gray-700');
+            } else {
+                absenEl.classList.remove('bg-gray-100', 'text-gray-700');
+            }
         }
 
         function showScreen(id) {
@@ -426,6 +582,9 @@
 
         function batalDanSinkronUlang() {
             if (countdownJadwalInterval) clearInterval(countdownJadwalInterval);
+            isLoginMode = false;
+            idPesertaLogin = '';
+            aturKunciFormIdentitas(false);
             showScreen('screen-unduh');
         }
 
@@ -467,11 +626,8 @@
         async function downloadBufferFromGDrive(rawLink) {
             const link = rawLink.trim();
 
-            // 1. JIKA LINK DARI SUPABASE STORAGE, GITHUB, ATAU DIRECT LINK (Bukan Google Drive)
             if (!link.includes('drive.google.com')) {
                 let directUrl = link;
-
-                // Otomatis ubah link GitHub biasa (/blob/) menjadi link file mentah (raw.githubusercontent.com)
                 if (link.includes('github.com') && link.includes('/blob/')) {
                     directUrl = link
                         .replace('https://github.com/', 'https://raw.githubusercontent.com/')
@@ -486,7 +642,6 @@
                 throw new Error("Gagal mengunduh file soal dari Server/Storage. Pastikan tautan bersifat publik.");
             }
 
-            // 2. JIKA LINK DARI GOOGLE DRIVE
             const fileIdMatch = link.match(/[-\w]{25,}/);
             if (!fileIdMatch) throw new Error("Tautan Google Drive tidak valid.");
             const fileId = fileIdMatch[0];
@@ -508,22 +663,165 @@
             throw new Error("Gagal mengunduh file dari Google Drive. Gunakan link Supabase Storage atau GitHub agar lebih stabil di Web.");
         }
 
+        async function ekstrakDanDekripsiTahap1(rawArrayBuffer, token) {
+            const uint8 = new Uint8Array(rawArrayBuffer);
+            if (uint8.length >= 4 &&
+                (uint8[0] ^ 0xA5) === 0x50 &&
+                (uint8[1] ^ 0xA5) === 0x4B &&
+                (uint8[2] ^ 0xA5) === 0x03 &&
+                (uint8[3] ^ 0xA5) === 0x04) {
+                for (let i = 0; i < uint8.length; i++) {
+                    uint8[i] = uint8[i] ^ 0xA5;
+                }
+            }
+
+            let encryptedOuterText = '';
+            Object.values(cbtMediaBlobUrls).forEach(u => URL.revokeObjectURL(u));
+            cbtMediaBlobUrls = {};
+
+            if (isZipSignature(uint8)) {
+                const zip = await JSZip.loadAsync(uint8.buffer);
+                const naskahFile = zip.file("naskah.enc");
+                if (!naskahFile) throw new Error("Paket ujian tidak valid (naskah.enc tidak ditemukan).");
+                encryptedOuterText = (await naskahFile.async("string")).trim();
+
+                const fileNames = Object.keys(zip.files);
+                for (const fname of fileNames) {
+                    const entry = zip.files[fname];
+                    if (!entry.dir && fname !== "naskah.enc") {
+                        const blob = await entry.async("blob");
+                        const cleanName = fname.split('/').pop();
+                        cbtMediaBlobUrls[cleanName] = URL.createObjectURL(blob);
+                    }
+                }
+            } else {
+                encryptedOuterText = new TextDecoder("utf-8").decode(uint8).trim();
+            }
+
+            const decryptedStr = decryptAES(encryptedOuterText, token);
+            if (!decryptedStr) throw new Error(isEn ? "Invalid Exam Sync Code or Corrupted File!" : "Kode Sinkronisasi Soal Salah atau File Rusak!");
+
+            const rootObj = JSON.parse(decryptedStr);
+            appData = { ...appData, ...rootObj };
+            studentData.token = token;
+            isModeCbt = String(appData.mode_ujian || 'PDF').toUpperCase() === 'CBT';
+
+            document.getElementById('info-nama-ujian').innerText = appData.nama_ujian || 'Ujian CBT';
+            document.getElementById('info-mapel').innerText = appData.mapel || '-';
+            document.getElementById('info-jadwal').innerText = (appData.tanggal || '-').replace('T', ' Jam ');
+            document.getElementById('info-waktu').innerText = appData.waktu || 90;
+            sisaWaktu = (parseInt(appData.waktu) || 90) * 60;
+
+            const badgeMode = document.getElementById('badge-mode-ujian');
+            badgeMode.innerText = isModeCbt ? '💻 NATIVE CBT' : '📄 MODE PDF';
+            badgeMode.className = isModeCbt
+                ? 'text-[10px] font-black px-2.5 py-0.5 rounded bg-indigo-600 text-white'
+                : 'text-[10px] font-black px-2.5 py-0.5 rounded bg-sky-600 text-white';
+
+            mulaiCountdownJadwal(appData.tanggal);
+        }
+
         // =========================================================================
-        // TAHAP 1: SINKRONISASI CLOUD / BUKA FILE .ENC (MENDUKUNG ZIP NATIVE CBT & PDF)
+        // TAHAP 1: PROSES TOMBOL MASUK LOGIN / SINKRONISASI CLOUD / FILE MANUAL
         // =========================================================================
         document.getElementById('btn-buka-soal').addEventListener('click', async () => {
+            const boxProg = document.getElementById('box-progress-unduh');
+            const barFill = document.getElementById('bar-progress-fill');
+            const btnBuka = document.getElementById('btn-buka-soal');
+
+            // CABANG 1: TAB 0 (MODE LOGIN PESERTA)
+            if (selectedUnduhTab === 0) {
+                const usernameInput = document.getElementById('login-username').value.trim();
+                const passwordInput = document.getElementById('login-password').value.trim();
+
+                if (!usernameInput || !passwordInput) {
+                    return alert(isEn ? "Username and Password are REQUIRED!" : "Username dan Password WAJIB diisi!");
+                }
+
+                boxProg.classList.remove('hidden');
+                barFill.style.width = '20%';
+                btnBuka.disabled = true;
+
+                try {
+                    const resPeserta = await fetch(`${SUPABASE_URL}/rest/v1/peserta_ujian?select=*&username=eq.${encodeURIComponent(usernameInput)}&password=eq.${encodeURIComponent(passwordInput)}&order=created_at.desc`, {
+                        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                    });
+                    if (!resPeserta.ok) throw new Error(isEn ? "Server connection error." : "Gangguan koneksi ke server.");
+                    const arrPeserta = await resPeserta.json();
+                    if (!arrPeserta.length) {
+                        throw new Error(isEn ? "Invalid Username or Password!" : "Username atau Password tidak ditemukan / salah!");
+                    }
+
+                    barFill.style.width = '45%';
+                    let pesertaTerpilih = null;
+                    let ujianTerpilih = null;
+                    let pesanTolak = isEn ? "Exam data not found for this account." : "Data ujian untuk akun ini tidak ditemukan.";
+
+                    for (const pObj of arrPeserta) {
+                        if (!pObj.id_ujian) continue;
+                        const resUjian = await fetch(`${SUPABASE_URL}/rest/v1/daftar_ujian?select=id,token,link_soal,is_active&id=eq.${encodeURIComponent(pObj.id_ujian)}`, {
+                            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                        });
+                        if (resUjian.ok) {
+                            const arrUjian = await resUjian.json();
+                            if (arrUjian.length > 0) {
+                                const uObj = arrUjian[0];
+                                if (uObj.is_active === false) {
+                                    pesanTolak = isEn ? "Exam is currently closed by the Teacher!" : "Ujian untuk akun ini sedang ditutup oleh Guru!";
+                                    continue;
+                                }
+                                if (String(pObj.status_mengerjakan || '').toLowerCase() === 'selesai') {
+                                    throw new Error(isEn ? "You have already finished and submitted this exam!" : "Akun Anda tercatat SUDAH SELESAI mengerjakan ujian ini!");
+                                }
+                                if (!uObj.link_soal) {
+                                    throw new Error(isEn ? "Teacher has not linked the exam file (.enc) yet." : "Guru belum menautkan link file soal (.enc) pada ujian ini.");
+                                }
+                                pesertaTerpilih = pObj;
+                                ujianTerpilih = uObj;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!pesertaTerpilih || !ujianTerpilih) {
+                        throw new Error(pesanTolak);
+                    }
+
+                    barFill.style.width = '75%';
+                    const rawArrayBuffer = await downloadBufferFromGDrive(ujianTerpilih.link_soal);
+                    barFill.style.width = '90%';
+
+                    const tokenServer = String(ujianTerpilih.token || '').trim().toUpperCase();
+                    await ekstrakDanDekripsiTahap1(rawArrayBuffer, tokenServer);
+
+                    isLoginMode = true;
+                    idPesertaLogin = pesertaTerpilih.id || '';
+                    aturKunciFormIdentitas(true, pesertaTerpilih);
+
+                    barFill.style.width = '100%';
+                    setTimeout(() => {
+                        boxProg.classList.add('hidden');
+                        btnBuka.disabled = false;
+                        showScreen('screen-identitas');
+                    }, 250);
+                } catch (err) {
+                    boxProg.classList.add('hidden');
+                    btnBuka.disabled = false;
+                    alert(err.message || "Gagal masuk ke ujian.");
+                }
+                return;
+            }
+
+            // CABANG 2 & 3: TAB 1 (KODE SOAL CLOUD) & TAB 2 (FILE MANUAL)
             const token = document.getElementById('token-input').value.trim().toUpperCase();
             const fileInput = document.getElementById('file-input');
             const gdriveInput = document.getElementById('gdrive-input').value.trim();
 
-            if (!token) return alert(isEn ? "Sync Code (Token) is REQUIRED!" : "Kode Sinkronisasi (Token) WAJIB diisi!");
-            if (selectedUnduhTab === 1 && !fileInput.files.length && !gdriveInput) {
+            if (!token) return alert(isEn ? "Exam Sync Code is REQUIRED!" : "Kode Sinkronisasi Soal WAJIB diisi!");
+            if (selectedUnduhTab === 2 && !fileInput.files.length && !gdriveInput) {
                 return alert(isEn ? "Select a local .enc file or paste a link!" : "Pilih file .enc lokal atau tempelkan link soal!");
             }
 
-            const boxProg = document.getElementById('box-progress-unduh');
-            const barFill = document.getElementById('bar-progress-fill');
-            const btnBuka = document.getElementById('btn-buka-soal');
             boxProg.classList.remove('hidden');
             barFill.style.width = '20%';
             btnBuka.disabled = true;
@@ -531,16 +829,33 @@
             try {
                 let rawArrayBuffer = null;
 
-                if (selectedUnduhTab === 0) {
+                if (selectedUnduhTab === 1) {
                     barFill.style.width = '40%';
-                    const resSupa = await fetch(`${SUPABASE_URL}/rest/v1/daftar_ujian?select=link_soal&token=eq.${encodeURIComponent(token)}`, {
+                    const resSupa = await fetch(`${SUPABASE_URL}/rest/v1/daftar_ujian?select=id,link_soal&token=eq.${encodeURIComponent(token)}`, {
                         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
                     });
                     if (!resSupa.ok) throw new Error("Gagal menghubungi server ujian.");
                     const arrSupa = await resSupa.json();
-                    if (!arrSupa.length) throw new Error(isEn ? "Sync Code (Token) not found!" : "Kode Sinkronisasi (Token) tidak ditemukan di server!");
+                    if (!arrSupa.length) throw new Error(isEn ? "Exam Sync Code not found!" : "Kode Sinkronisasi Soal tidak ditemukan di server!");
+
+                    const idUjian = arrSupa[0].id;
+                    if (idUjian) {
+                        const resCekPeserta = await fetch(`${SUPABASE_URL}/rest/v1/peserta_ujian?select=id&id_ujian=eq.${encodeURIComponent(idUjian)}&limit=1`, {
+                            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                        });
+                        if (resCekPeserta.ok) {
+                            const arrP = await resCekPeserta.json();
+                            if (arrP.length > 0) {
+                                switchUnduhTab(0);
+                                throw new Error(isEn
+                                    ? "This exam uses Login Mode! Please sign in using your Username & Password."
+                                    : "Ujian ini menggunakan Mode Login! Silakan masuk melalui tab '🔑 Login' menggunakan Username & Password Anda.");
+                            }
+                        }
+                    }
+
                     const linkDrive = arrSupa[0].link_soal;
-                    if (!linkDrive) throw new Error(isEn ? "Teacher has not uploaded the exam link for this token." : "Guru belum menautkan link soal untuk Kode Token ini.");
+                    if (!linkDrive) throw new Error(isEn ? "Teacher has not uploaded the exam link for this code." : "Guru belum menautkan link soal untuk Kode Sinkronisasi Soal ini.");
 
                     barFill.style.width = '70%';
                     rawArrayBuffer = await downloadBufferFromGDrive(linkDrive);
@@ -554,63 +869,13 @@
                 }
 
                 barFill.style.width = '85%';
-                const uint8 = new Uint8Array(rawArrayBuffer);
-               if (uint8.length >= 4 &&
-                (uint8[0] ^ 0xA5) === 0x50 &&
-                (uint8[1] ^ 0xA5) === 0x4B &&
-                (uint8[2] ^ 0xA5) === 0x03 &&
-                (uint8[3] ^ 0xA5) === 0x04) {
-                for (let i = 0; i < uint8.length; i++) {
-                    uint8[i] = uint8[i] ^ 0xA5;
-                }
-            }
-                
-                let encryptedOuterText = '';
+                await ekstrakDanDekripsiTahap1(rawArrayBuffer, token);
 
-                Object.values(cbtMediaBlobUrls).forEach(u => URL.revokeObjectURL(u));
-                cbtMediaBlobUrls = {};
-
-                if (isZipSignature(uint8)) {
-                    const zip = await JSZip.loadAsync(rawArrayBuffer);
-                    const naskahFile = zip.file("naskah.enc");
-                    if (!naskahFile) throw new Error("Paket ujian tidak valid (naskah.enc tidak ditemukan).");
-                    encryptedOuterText = (await naskahFile.async("string")).trim();
-
-                    const fileNames = Object.keys(zip.files);
-                    for (const fname of fileNames) {
-                        const entry = zip.files[fname];
-                        if (!entry.dir && fname !== "naskah.enc") {
-                            const blob = await entry.async("blob");
-                            const cleanName = fname.split('/').pop();
-                            cbtMediaBlobUrls[cleanName] = URL.createObjectURL(blob);
-                        }
-                    }
-                } else {
-                    encryptedOuterText = new TextDecoder("utf-8").decode(uint8).trim();
-                }
-
-                const decryptedStr = decryptAES(encryptedOuterText, token);
-                if (!decryptedStr) throw new Error(isEn ? "Invalid Token or Corrupted File!" : "Kode Sinkronisasi (Token) Salah atau File Rusak!");
-
-                const rootObj = JSON.parse(decryptedStr);
-                appData = { ...appData, ...rootObj };
-                studentData.token = token;
-                isModeCbt = String(appData.mode_ujian || 'PDF').toUpperCase() === 'CBT';
+                isLoginMode = false;
+                idPesertaLogin = '';
+                aturKunciFormIdentitas(false);
 
                 barFill.style.width = '100%';
-                document.getElementById('info-nama-ujian').innerText = appData.nama_ujian || 'Ujian CBT';
-                document.getElementById('info-mapel').innerText = appData.mapel || '-';
-                document.getElementById('info-jadwal').innerText = (appData.tanggal || '-').replace('T', ' Jam ');
-                document.getElementById('info-waktu').innerText = appData.waktu || 90;
-                sisaWaktu = (parseInt(appData.waktu) || 90) * 60;
-
-                const badgeMode = document.getElementById('badge-mode-ujian');
-                badgeMode.innerText = isModeCbt ? '💻 NATIVE CBT' : '📄 MODE PDF';
-                badgeMode.className = isModeCbt
-                    ? 'text-[10px] font-black px-2.5 py-0.5 rounded bg-indigo-600 text-white'
-                    : 'text-[10px] font-black px-2.5 py-0.5 rounded bg-sky-600 text-white';
-
-                mulaiCountdownJadwal(appData.tanggal);
                 setTimeout(() => {
                     boxProg.classList.add('hidden');
                     btnBuka.disabled = false;
@@ -665,10 +930,11 @@
         }
 
         // =========================================================================
-        // TAHAP 2: VERIFIKASI SERVER, BUKA GEMBOK PIN & MULAI UJIAN
+        // TAHAP 2: VERIFIKASI SERVER, BUKA GEMBOK TOKEN UJIAN & MULAI UJIAN
         // =========================================================================
         document.getElementById('btn-mulai').addEventListener('click', async () => {
             studentData.nama = document.getElementById('nama-input').value.trim();
+            studentData.nis = document.getElementById('nis-input').value.trim();
             studentData.sekolah = document.getElementById('sekolah-input').value.trim();
             studentData.kelas = document.getElementById('kelas-input').value.trim();
             studentData.absen = document.getElementById('absen-input').value;
@@ -677,7 +943,7 @@
             const pin = document.getElementById('pin-input').value.trim().toUpperCase();
 
             if (!studentData.nama) return alert(isEn ? "Full Name is REQUIRED!" : "Nama Lengkap WAJIB diisi!");
-            if (!pin) return alert(isEn ? "Proctor PIN is REQUIRED!" : "PIN Pengawas WAJIB diisi!");
+            if (!pin) return alert(isEn ? "Exam Token is REQUIRED!" : "Token Ujian WAJIB diisi!");
 
             const btnMulai = document.getElementById('btn-mulai');
             const teksAsli = btnMulai.innerText;
@@ -714,7 +980,7 @@
             btnMulai.innerText = teksAsli;
             btnMulai.disabled = false;
 
-            if (!decryptedInner) return alert(isEn ? "Incorrect Proctor PIN!" : "PIN Pengawas Salah!");
+            if (!decryptedInner) return alert(isEn ? "Incorrect Exam Token!" : "Token Ujian Salah!");
 
             try {
                 const innerObj = JSON.parse(decryptedInner);
@@ -816,6 +1082,11 @@
                     const saved = localStorage.getItem(`examcbt_${studentData.token}_${studentData.nama}_${s.id_asli}`);
                     if (saved) s.jawabanSiswa = saved;
                 });
+
+                // Update Status Live menjadi "Sedang Ujian" jika menggunakan Mode Login
+                if (isLoginMode && idPesertaLogin) {
+                    updateStatusPesertaServer(idPesertaLogin, 'Sedang Ujian');
+                }
 
                 if (countdownJadwalInterval) clearInterval(countdownJadwalInterval);
                 waktuMulaiMillis = Date.now();
@@ -1031,13 +1302,13 @@
                 <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-2">
                     <p class="text-xs font-extrabold text-emerald-900">🟩 Daftar Pilihan Pasangan (Bagian Kanan):</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                     ${kananAktif.map(k => `
-                         <div class="bg-white p-2.5 rounded-lg border border-emerald-200 flex items-center space-x-2">
-                             <span class="bg-emerald-600 text-white font-black text-xs px-2 py-0.5 rounded">${k.kode}</span>
-                             <span class="text-gray-800 teks-skala-cbt">${k.teks}</span>
-                         </div>
-                     `).join('')}
-                 </div>
+                        ${kananAktif.map(k => `
+                            <div class="bg-white p-2.5 rounded-lg border border-emerald-200 flex items-center space-x-2">
+                                <span class="bg-emerald-600 text-white font-black text-xs px-2 py-0.5 rounded">${k.kode}</span>
+                                <span class="text-gray-800 teks-skala-cbt">${k.teks}</span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
                 <p class="text-xs font-bold text-blue-900">🟦 Ketuk huruf pasangan yang tepat untuk setiap pernyataan di bawah:</p>
                 <div class="space-y-2.5">`;
@@ -1233,7 +1504,6 @@
                 }
                 answerArea.appendChild(wrap);
             } else if (type === "jodoh") {
-                // TOMBOL INTERAKTIF MENJODOHKAN (MODE PDF)
                 const jawabanList = (soal.jawabanSiswa || '').split(" ").filter(Boolean);
                 const usedNumbers = jawabanList.map(p => parseInt(p[0])).filter(n => !isNaN(n));
                 const usedLetters = jawabanList.map(p => p.slice(-1));
@@ -1592,6 +1862,10 @@
             }
 
             if (isSuccess) {
+                if (isLoginMode && idPesertaLogin) {
+                    await updateStatusPesertaServer(idPesertaLogin, 'Selesai');
+                }
+
                 isUjianActive = false;
                 isSubmitting = false;
                 clearInterval(timerInterval);
