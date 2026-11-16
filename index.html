@@ -214,7 +214,7 @@
             <div class="w-full lg:w-[70%] bg-white rounded-xl shadow-sm flex flex-col flex-1 border border-gray-200 overflow-hidden">
                 
                 <!-- Area Soal yang Bisa Di-scroll (Sisa Layar) -->
-                <div class="flex-1 overflow-y-auto p-3 sm:p-4">
+                <div class="flex-1 overflow-y-auto p-3 sm:p-4 pb-40">
                     <!-- Header Soal -->
                     <div class="flex justify-between items-center mb-2 bg-blue-900 text-white px-3.5 py-2 rounded-lg flex-shrink-0">
                         <div id="pdf-page-controls" class="flex items-center space-x-1.5">
@@ -1387,9 +1387,9 @@
                         ${isUraian ? '✍️ Ketik Jawaban Uraian Anda di Bawah Ini:' : '✍️ Ketik Jawaban Singkat Anda di Bawah Ini:'}
                     </label>
                     ${isUraian ? `
-                        <textarea rows="5" placeholder="Ketik jawaban uraian lengkap di sini..." class="w-full border-2 border-gray-300 rounded-xl p-3 outline-none focus:border-blue-600" oninput="simpanTeksLangsungCbt(this.value)">${soal.jawabanSiswa || ''}</textarea>
+                        <textarea rows="5" placeholder="Ketik jawaban uraian lengkap di sini..." class="w-full border-2 border-gray-300 rounded-xl p-3 outline-none focus:border-blue-600" oninput="simpanTeksLangsungCbt(this.value)" onfocus="setTimeout(()=>this.scrollIntoView({behavior:'smooth', block:'center'}), 300)">${soal.jawabanSiswa || ''}</textarea>
                     ` : `
-                        <input type="text" value="${(soal.jawabanSiswa || '').replace(/"/g, '&quot;')}" placeholder="Ketik jawaban singkat..." class="w-full border-2 border-gray-300 rounded-xl p-3 font-bold uppercase outline-none focus:border-blue-600" oninput="simpanTeksLangsungCbt(this.value.toUpperCase())">
+                        <input type="text" value="${(soal.jawabanSiswa || '').replace(/"/g, '&quot;')}" placeholder="Ketik jawaban singkat..." class="w-full border-2 border-gray-300 rounded-xl p-3 font-bold uppercase outline-none focus:border-blue-600" oninput="simpanTeksLangsungCbt(this.value.toUpperCase())" onfocus="setTimeout(()=>this.scrollIntoView({behavior:'smooth', block:'center'}), 300)">
                     `}
                 </div>`;
             }
@@ -1613,6 +1613,14 @@
                 if (isUraian) input.rows = 3;
                 input.value = soal.jawabanSiswa;
                 input.oninput = (e) => simpanTeksLangsungCbt(isUraian ? e.target.value : e.target.value.toUpperCase());
+                
+                // Tambahan: Auto-scroll ke tengah layar saat keyboard muncul
+                input.onfocus = function() {
+                    setTimeout(() => {
+                        this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                };
+                
                 answerArea.appendChild(input);
             }
         }
