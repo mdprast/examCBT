@@ -355,7 +355,16 @@
             <button type="button" onclick="tutupModalPeringatan()" class="w-full bg-red-600 text-white font-bold py-2.5 rounded-xl shadow">Saya Mengerti</button>
         </div>
     </div>
-
+<!-- OVERLAY FULLSCREEN LOCK (Tampil jika layar dikecilkan/Esc) -->
+    <div id="modal-fullscreen-lock" class="hidden fixed inset-0 bg-gray-900 z-[170] flex flex-col items-center justify-center p-6 text-center">
+        <div class="text-6xl mb-4">🖥️</div>
+        <h2 class="text-2xl font-black text-white mb-2" id="lbl-fs-judul">Ujian Berlangsung!</h2>
+        <p class="text-gray-300 mb-8 max-w-md" id="lbl-fs-desc">Anda keluar dari mode layar penuh (Full Screen). Silakan kembali ke mode layar penuh untuk melanjutkan ujian.</p>
+        <button type="button" onclick="kembaliKeFullscreen()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-xl shadow-lg border border-blue-400">
+            Kembali ke Ujian
+        </button>
+    </div>
+    
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
@@ -614,7 +623,32 @@
             document.getElementById('modal-peringatan').classList.add('hidden');
             if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
         }
+        // =========================================================================
+        // FULLSCREEN LOCK (MENCEGAH SISWA KELUAR DARI LAYAR PENUH)
+        // =========================================================================
+        document.addEventListener('fullscreenchange', () => {
+            // Hanya berlaku jika siswa sedang berada di dalam layar ujian dan belum mengumpulkan
+            if (isUjianActive && !isSubmitting && sisaWaktu > 0) {
+                if (!document.fullscreenElement) {
+                    // Jika keluar dari fullscreen, munculkan tirai peringatan
+                    document.getElementById('lbl-fs-judul').innerText = isEn ? "Exam in Progress!" : "Ujian Berlangsung!";
+                    document.getElementById('lbl-fs-desc').innerText = isEn 
+                        ? "You exited full-screen mode. Please return to full-screen to continue your exam." 
+                        : "Anda keluar dari mode layar penuh (Full Screen). Silakan kembali ke mode layar penuh untuk melanjutkan ujian.";
+                    
+                    document.getElementById('modal-fullscreen-lock').classList.remove('hidden');
+                }
+            }
+        });
 
+        function kembaliKeFullscreen() {
+            document.documentElement.requestFullscreen().then(() => {
+                document.getElementById('modal-fullscreen-lock').classList.add('hidden');
+            }).catch(err => {
+                alert("Browser Anda menolak akses Full Screen. Tekan F11 pada keyboard Anda secara manual.");
+            });
+        }
+        
         function decryptAES(encryptedBase64, keyString) {
             try {
                 const bytes = CryptoJS.AES.decrypt(encryptedBase64, keyString);
