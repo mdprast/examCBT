@@ -88,7 +88,7 @@
                     🔑 Login
                 </button>
                 <button type="button" id="tab-sync-cloud" onclick="switchUnduhTab(1)" class="py-2 rounded-lg font-bold text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition">
-                    ☁️ Kode Soal
+                    ☁️ Sinkron
                 </button>
                 <button type="button" id="tab-manual-file" onclick="switchUnduhTab(2)" class="py-2 rounded-lg font-bold text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition">
                     📂 Manual
@@ -211,30 +211,34 @@
         <div class="flex flex-col lg:flex-row h-full gap-4 w-full min-h-max">
 
             <!-- KOLOM KIRI (70% PC, 100% MOBILE): AREA SOAL -->
-            <div class="w-full lg:w-[70%] bg-white rounded-xl shadow-sm p-3 sm:p-4 flex flex-col flex-1 border border-gray-200">
-                <!-- Header Soal -->
-                <div class="flex justify-between items-center mb-2 bg-blue-900 text-white px-3.5 py-2 rounded-lg flex-shrink-0">
-                    <div id="pdf-page-controls" class="flex items-center space-x-1.5">
-                        <button type="button" id="btn-pdf-prev" class="bg-blue-700 hover:bg-blue-600 px-2.5 py-1 rounded text-xs font-bold">&lt; Hal</button>
-                        <span id="pdf-page-indicator" class="text-xs font-bold px-1">Hal. 1</span>
-                        <button type="button" id="btn-pdf-next" class="bg-blue-700 hover:bg-blue-600 px-2.5 py-1 rounded text-xs font-bold">Hal &gt;</button>
+            <div class="w-full lg:w-[70%] bg-white rounded-xl shadow-sm flex flex-col flex-1 border border-gray-200 overflow-hidden">
+                
+                <!-- Area Soal yang Bisa Di-scroll (Sisa Layar) -->
+                <div class="flex-1 overflow-y-auto p-3 sm:p-4">
+                    <!-- Header Soal -->
+                    <div class="flex justify-between items-center mb-2 bg-blue-900 text-white px-3.5 py-2 rounded-lg flex-shrink-0">
+                        <div id="pdf-page-controls" class="flex items-center space-x-1.5">
+                            <button type="button" id="btn-pdf-prev" class="bg-blue-700 hover:bg-blue-600 px-2.5 py-1 rounded text-xs font-bold">&lt; Hal</button>
+                            <span id="pdf-page-indicator" class="text-xs font-bold px-1">Hal. 1</span>
+                            <button type="button" id="btn-pdf-next" class="bg-blue-700 hover:bg-blue-600 px-2.5 py-1 rounded text-xs font-bold">Hal &gt;</button>
+                        </div>
+                        <span id="soal-indicator" class="font-black text-sm sm:text-base tracking-wide">SOAL NO. 1</span>
+                        <span id="poin-indicator" class="text-[11px] bg-blue-700 px-2.5 py-0.5 rounded font-bold">Poin: +1</span>
                     </div>
-                    <span id="soal-indicator" class="font-black text-sm sm:text-base tracking-wide">SOAL NO. 1</span>
-                    <span id="poin-indicator" class="text-[11px] bg-blue-700 px-2.5 py-0.5 rounded font-bold">Poin: +1</span>
+
+                    <!-- WADAH 1: KANVAS MODE PDF -->
+                    <div id="pdf-canvas-container" class="bg-gray-100 rounded-lg mb-2 overflow-auto flex items-center justify-center p-2 relative min-h-[300px]">
+                        <canvas id="pdf-canvas" class="border border-gray-300 shadow-sm rounded bg-white max-w-full"></canvas>
+                    </div>
+
+                    <!-- WADAH 2: LEMBAR INTERAKTIF MODE NATIVE CBT -->
+                    <div id="native-cbt-container" class="hidden w-full space-y-3 cbt-scale-content"></div>
                 </div>
 
-                <!-- WADAH 1: KANVAS MODE PDF -->
-                <div id="pdf-canvas-container" class="bg-gray-100 flex-1 rounded-lg mb-3 overflow-auto flex items-center justify-center p-2 relative min-h-[300px]">
-                    <canvas id="pdf-canvas" class="border border-gray-300 shadow-sm rounded bg-white max-w-full"></canvas>
-                </div>
-
-                <!-- WADAH 2: LEMBAR INTERAKTIF MODE NATIVE CBT -->
-                <div id="native-cbt-container" class="hidden w-full mb-3 space-y-3 cbt-scale-content"></div>
-
-                <!-- Tombol Navigasi Bawah -->
-                <div class="flex justify-between items-center flex-shrink-0 mt-4 pt-3 border-t">
+                <!-- STICKY FOOTER: Tombol Navigasi Bawah Terkunci (Tidak ikut ter-scroll) -->
+                <div class="bg-white border-t border-gray-200 p-3 sm:px-4 flex justify-between items-center flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                     <button type="button" id="btn-prev" class="bg-gray-200 text-gray-800 px-3 sm:px-6 py-2.5 rounded-lg font-bold hover:bg-gray-300 text-sm">&laquo; <span class="hidden sm:inline">Sebelumnya</span></button>
-                    <button type="button" onclick="bukaModalPetaMobile()" class="lg:hidden bg-gray-700 text-white px-3.5 py-2.5 rounded-lg font-bold text-xs">Peta Soal</button>
+                    <button type="button" onclick="bukaModalPetaMobile()" class="lg:hidden bg-gray-700 hover:bg-gray-800 text-white px-4 py-2.5 rounded-lg font-bold text-xs shadow-sm">🗺️ Peta Soal</button>
                     <button type="button" id="btn-next" class="bg-blue-600 text-white px-4 sm:px-6 py-2.5 rounded-lg font-bold shadow hover:bg-blue-700 text-sm"><span class="hidden sm:inline">Selanjutnya</span> &raquo;</button>
                 </div>
             </div>
@@ -359,7 +363,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtcmprdnd0dmF6cWdjcG9pc3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNjM2NjQsImV4cCI6MjEwMjYzOTY2NH0.dzggikCaHFqaqwdtZTMHsNsz7oK4l9se2ekTgfHSIBU';
 
         let isEn = false;
-        let selectedUnduhTab = 0; // 0 = Login Peserta, 1 = Kode Soal (Cloud), 2 = Manual File/Link
+        let selectedUnduhTab = 0; // 0 = Login Peserta, 1 = Sinkron (Cloud), 2 = Manual File/Link
         let isLoginMode = false;
         let idPesertaLogin = '';
         let brightnessLevel = 1.0;
@@ -454,7 +458,7 @@
             document.getElementById('btn-lang-toggle').innerText = isEn ? '🇬🇧 EN' : '🇮🇩 ID';
             document.getElementById('title-app').innerText = isEn ? 'EXAM-CBT APP' : 'APLIKASI EXAM-CBT';
             document.getElementById('tab-login-peserta').innerText = isEn ? '🔑 Login' : '🔑 Login';
-            document.getElementById('tab-sync-cloud').innerText = isEn ? '☁️ Exam Code' : '☁️ Kode Soal';
+            document.getElementById('tab-sync-cloud').innerText = isEn ? '☁️ Sync Code' : '☁️ Sinkron';
             document.getElementById('tab-manual-file').innerText = isEn ? '📂 Manual' : '📂 Manual';
             document.getElementById('lbl-login-title').innerText = isEn ? 'Student Account Login' : 'Login Akun Peserta Ujian';
             document.getElementById('lbl-login-sub').innerText = isEn ? 'Use Username & Password from your Teacher' : 'Gunakan Username & Password dari Kartu Login Guru';
