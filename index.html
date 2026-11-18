@@ -880,22 +880,6 @@
                     const arrSupa = await resSupa.json();
                     if (!arrSupa.length) throw new Error(isEn ? "Exam Sync Code not found!" : "Kode Sinkronisasi Soal tidak ditemukan di server!");
 
-                    const idUjian = arrSupa[0].id;
-                    if (idUjian) {
-                        const resCekPeserta = await fetch(`${SUPABASE_URL}/rest/v1/peserta_ujian?select=id&id_ujian=eq.${encodeURIComponent(idUjian)}&limit=1`, {
-                            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-                        });
-                        if (resCekPeserta.ok) {
-                            const arrP = await resCekPeserta.json();
-                            if (arrP.length > 0) {
-                                switchUnduhTab(0);
-                                throw new Error(isEn
-                                    ? "This exam uses Login Mode! Please sign in using your Username & Password."
-                                    : "Ujian ini menggunakan Mode Login! Silakan masuk melalui tab '🔑 Login' menggunakan Username & Password Anda.");
-                            }
-                        }
-                    }
-
                     const linkDrive = arrSupa[0].link_soal;
                     if (!linkDrive) throw new Error(isEn ? "Teacher has not uploaded the exam link for this code." : "Guru belum menautkan link soal untuk Kode Sinkronisasi Soal ini.");
 
